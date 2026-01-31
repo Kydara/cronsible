@@ -1,0 +1,44 @@
+{{define "hosts"}}
+<div class="card">
+  <div class="actions" style="justify-content:space-between;">
+    <h2>Hosts</h2>
+    <a class="btn" href="/hosts/new">Add Host</a>
+  </div>
+  {{if .Hosts}}
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Address</th>
+        <th>User</th>
+        <th>Port</th>
+        <th>Groups</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Hosts}}
+      <tr>
+        <td>{{.Name}}</td>
+        <td>{{.Address}}</td>
+        <td>{{.User}}</td>
+        <td>{{.Port}}</td>
+        <td>{{if .GroupNames}}{{.GroupNames}}{{else}}<span class="muted">-</span>{{end}}</td>
+        <td>
+          <div class="actions">
+            <a class="btn secondary" href="/hosts/edit?id={{.ID}}">Edit</a>
+            <form method="post" action="/hosts/delete">
+              <input type="hidden" name="id" value="{{.ID}}">
+              <button type="submit" class="danger">Delete</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{else}}
+    <p class="muted">No hosts yet.</p>
+  {{end}}
+</div>
+{{end}}

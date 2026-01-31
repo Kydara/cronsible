@@ -1,0 +1,50 @@
+{{define "jobs"}}
+<div class="card">
+  <div class="actions" style="justify-content:space-between;">
+    <h2>Jobs</h2>
+    <a class="btn" href="/jobs/new">Add Job</a>
+  </div>
+  {{if .Jobs}}
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Target</th>
+        <th>Schedule</th>
+        <th>Command</th>
+        <th>Enabled</th>
+        <th>Next Run</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Jobs}}
+      <tr>
+        <td>{{.Name}}</td>
+        <td>{{.TargetType}}: {{.TargetName}}</td>
+        <td><span class="pill">{{.Schedule}}</span></td>
+        <td><code>{{.Command}}</code></td>
+        <td>{{if .Enabled}}yes{{else}}no{{end}}</td>
+        <td>{{.NextRun}}</td>
+        <td>
+          <div class="actions">
+            <form method="post" action="/jobs/run">
+              <input type="hidden" name="id" value="{{.ID}}">
+              <button type="submit" class="secondary">Run</button>
+            </form>
+            <a class="btn secondary" href="/jobs/edit?id={{.ID}}">Edit</a>
+            <form method="post" action="/jobs/delete">
+              <input type="hidden" name="id" value="{{.ID}}">
+              <button type="submit" class="danger">Delete</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{else}}
+    <p class="muted">No jobs yet.</p>
+  {{end}}
+</div>
+{{end}}

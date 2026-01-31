@@ -1,0 +1,19 @@
+{{define "setup"}}
+<div class="card" style="max-width:420px;margin:40px auto;">
+  <h2>Initial Setup</h2>
+  <p class="muted">Create the first admin account.</p>
+  <form method="post" action="/setup">
+    <div class="form-row">
+      <label for="username">Username</label>
+      <input type="text" name="username" id="username" required>
+    </div>
+    <div class="form-row">
+      <label for="password">Password</label>
+      <input type="password" name="password" id="password" required>
+    </div>
+    <div class="actions">
+      <button type="submit">Create Admin</button>
+    </div>
+  </form>
+</div>
+{{end}}

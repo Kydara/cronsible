@@ -1,0 +1,18 @@
+{{define "inventory"}}
+<div class="card">
+  <h2>Inventory</h2>
+  <p>Inventory path: <code>{{.InventoryPath}}</code></p>
+  <div class="actions">
+    <form method="post" action="/inventory/generate">
+      <button type="submit">Generate Inventory</button>
+    </form>
+    <a class="btn secondary" href="/inventory/download">Download</a>
+  </div>
+  <p class="muted" style="font-size:12px;">Inventory is also regenerated before each job run.</p>
+  {{if .InventoryContent}}
+  <pre>{{.InventoryContent}}</pre>
+  {{else}}
+  <p class="muted">No inventory generated yet.</p>
+  {{end}}
+</div>
+{{end}}

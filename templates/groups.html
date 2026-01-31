@@ -1,0 +1,40 @@
+{{define "groups"}}
+<div class="card">
+  <div class="actions" style="justify-content:space-between;">
+    <h2>Groups</h2>
+    <a class="btn" href="/groups/new">Add Group</a>
+  </div>
+  {{if .Groups}}
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Hosts</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Groups}}
+      <tr>
+        <td>{{.Name}}</td>
+        <td>{{if .Description}}{{.Description}}{{else}}<span class="muted">-</span>{{end}}</td>
+        <td>{{.HostCount}}</td>
+        <td>
+          <div class="actions">
+            <a class="btn secondary" href="/groups/edit?id={{.ID}}">Edit</a>
+            <form method="post" action="/groups/delete">
+              <input type="hidden" name="id" value="{{.ID}}">
+              <button type="submit" class="danger">Delete</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{else}}
+    <p class="muted">No groups yet.</p>
+  {{end}}
+</div>
+{{end}}

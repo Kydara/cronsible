@@ -1,0 +1,50 @@
+{{define "job_form"}}
+<div class="card" style="max-width:760px;">
+  <h2>{{if .SelectedJob}}Edit Job{{else}}New Job{{end}}</h2>
+  <form method="post" action="{{if .SelectedJob}}/jobs/update{{else}}/jobs/create{{end}}">
+    {{if .SelectedJob}}<input type="hidden" name="id" value="{{.SelectedJob.ID}}">{{end}}
+    <div class="form-row">
+      <label for="name">Name</label>
+      <input type="text" name="name" id="name" value="{{if .SelectedJob}}{{.SelectedJob.Name}}{{end}}" required>
+    </div>
+    <div class="form-row">
+      <label for="target">Target (host or group)</label>
+      <select name="target" id="target" required>
+        <option value="">Select target</option>
+        <optgroup label="Hosts">
+          {{range .Hosts}}
+          <option value="host:{{.ID}}" {{if eq $.SelectedTarget (printf "host:%d" .ID)}}selected{{end}}>{{.Name}}</option>
+          {{end}}
+        </optgroup>
+        <optgroup label="Groups">
+          {{range .Groups}}
+          <option value="group:{{.ID}}" {{if eq $.SelectedTarget (printf "group:%d" .ID)}}selected{{end}}>{{.Name}}</option>
+          {{end}}
+        </optgroup>
+      </select>
+    </div>
+    <div class="form-row">
+      <label for="schedule">Cron Schedule</label>
+      <input type="text" name="schedule" id="schedule" value="{{if .SelectedJob}}{{.SelectedJob.Schedule}}{{end}}" placeholder="*/5 * * * *" required>
+      <div class="muted" style="font-size:12px;">Five-field cron format: minute hour day month weekday.</div>
+    </div>
+    <div class="form-row">
+      <label for="schedule_hint">Schedule Hint (AI helper)</label>
+      <input type="text" name="schedule_hint" id="schedule_hint" placeholder="every 5 minutes, weekdays at 02:30">
+      <div class="muted" style="font-size:12px;">Simple parser for common phrases.</div>
+    </div>
+    <div class="form-row">
+      <label for="command">Command</label>
+      <textarea name="command" id="command" required>{{if .SelectedJob}}{{.SelectedJob.Command}}{{end}}</textarea>
+    </div>
+    <div class="form-row">
+      <label><input type="checkbox" name="enabled" {{if .SelectedJob}}{{if .SelectedJob.Enabled}}checked{{end}}{{else}}checked{{end}}> Enabled</label>
+    </div>
+    <div class="actions">
+      <button type="submit" class="secondary" formaction="/jobs/suggest" formnovalidate>Suggest Cron</button>
+      <button type="submit">Save</button>
+      <a class="btn secondary" href="/jobs">Cancel</a>
+    </div>
+  </form>
+</div>
+{{end}}

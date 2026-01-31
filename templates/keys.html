@@ -1,0 +1,97 @@
+{{define "keys"}}
+<div class="grid">
+  <div class="card">
+    <h2>SSH Keys</h2>
+    {{if .Keys}}
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Created</th>
+          <th>Active</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Keys}}
+        <tr>
+          <td>{{.Name}}</td>
+          <td>{{formatTime .CreatedAt}}</td>
+          <td>{{if eq .ID $.ActiveKeyID}}<span class="pill good">active</span>{{else}}<span class="pill">-</span>{{end}}</td>
+          <td>
+            <div class="actions">
+              <form method="post" action="/keys/activate">
+                <input type="hidden" name="id" value="{{.ID}}">
+                <button type="submit" class="secondary">Set Active</button>
+              </form>
+              <a class="btn secondary" href="#pubkey-{{.ID}}">Show Public Key</a>
+              <form method="post" action="/keys/delete">
+                <input type="hidden" name="id" value="{{.ID}}">
+                <button type="submit" class="danger">Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+    {{else}}
+    <p class="muted">No keys yet.</p>
+    {{end}}
+  </div>
+  <div class="card">
+    <h3>Upload Key</h3>
+    <form method="post" action="/keys/upload" enctype="multipart/form-data">
+      <div class="form-row">
+        <label for="name">Name</label>
+        <input type="text" name="name" id="name" placeholder="production-key">
+      </div>
+      <div class="form-row">
+        <label for="private_key">Private Key</label>
+        <input type="file" name="private_key" id="private_key" required>
+      </div>
+      <div class="form-row">
+        <label for="public_key">Public Key (optional)</label>
+        <input type="file" name="public_key" id="public_key">
+      </div>
+      <div class="actions">
+        <button type="submit">Upload</button>
+      </div>
+    </form>
+  </div>
+  <div class="card">
+    <h3>Generate Key</h3>
+    <form method="post" action="/keys/generate">
+      <div class="form-row">
+        <label for="gen_name">Name</label>
+        <input type="text" name="name" id="gen_name" value="auto-{{nowUnix}}">
+      </div>
+      <div class="actions">
+        <button type="submit">Generate</button>
+      </div>
+    </form>
+    <p class="muted" style="font-size:12px;">Uses ssh-keygen on the server.</p>
+  </div>
+</div>
+
+{{range .Keys}}
+<div id="pubkey-{{.ID}}" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Public Key: {{.Name}}</h3>
+      <div class="actions">
+        {{if .PublicKey}}
+        <button type="button" class="secondary" data-copy-target="#pubkey-{{.ID}}-text" data-copy-label="Copy">Copy</button>
+        {{end}}
+        <a class="btn secondary" href="#">Close</a>
+      </div>
+    </div>
+    {{if .PublicKey}}
+    <pre id="pubkey-{{.ID}}-text">{{.PublicKey}}</pre>
+    {{else}}
+    <p class="muted">No public key available. Upload a public key or use an unencrypted private key so it can be derived.</p>
+    {{end}}
+  </div>
+</div>
+{{end}}
+{{end}}
