@@ -29,11 +29,28 @@
           <td class="px-3 py-3">{{.Port}}</td>
           <td class="px-3 py-3">{{if .GroupNames}}{{.GroupNames}}{{else}}<span class="text-slate-400">-</span>{{end}}</td>
           <td class="px-3 py-3">
-            <div class="flex flex-wrap gap-2">
-              <a class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100" href="/hosts/edit?id={{.ID}}">Edit</a>
+            <div class="flex items-center gap-2">
+              <a class="group relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100" href="/hosts/edit?id={{.ID}}" aria-label="Edit host">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 20h9"></path>
+                  <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
+                </svg>
+                <span class="sr-only">Edit</span>
+                <span class="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black px-2 py-1 text-[10px] font-medium text-white opacity-0 group-hover:opacity-100">Edit</span>
+              </a>
               <form method="post" action="/hosts/delete">
                 <input type="hidden" name="id" value="{{.ID}}">
-                <button type="submit" class="inline-flex items-center rounded-lg bg-rose-600 px-3 py-1 text-xs font-semibold text-white shadow-sm hover:bg-rose-700">Delete</button>
+                <button type="submit" class="group relative inline-flex items-center rounded-lg bg-rose-600 px-2.5 py-1 text-xs font-semibold text-white shadow-sm hover:bg-rose-700" aria-label="Delete host">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 6h18"></path>
+                    <path d="M8 6V4h8v2"></path>
+                    <path d="M6 6l1 14h10l1-14"></path>
+                    <path d="M10 10v6"></path>
+                    <path d="M14 10v6"></path>
+                  </svg>
+                  <span class="sr-only">Delete</span>
+                  <span class="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black px-2 py-1 text-[10px] font-medium text-white opacity-0 group-hover:opacity-100">Delete</span>
+                </button>
               </form>
             </div>
           </td>

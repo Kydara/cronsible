@@ -9,7 +9,11 @@
     </div>
     <div>
       <label for="address" class="block text-sm font-semibold text-slate-700">Address</label>
-      <input class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" type="text" name="address" id="address" value="{{if .SelectedHost}}{{.SelectedHost.Address}}{{end}}" required>
+      <div class="mt-2 flex gap-2">
+        <input class="w-full flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" type="text" name="address" id="address" value="{{if .SelectedHost}}{{.SelectedHost.Address}}{{end}}" required>
+        <button type="button" class="inline-flex items-center whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100" data-scan-host-key>Scan key</button>
+      </div>
+      <p id="scan_status" class="mt-2 text-xs text-slate-500"></p>
     </div>
     <div class="grid gap-4 md:grid-cols-2">
       <div>
@@ -45,4 +49,65 @@
     </div>
   </form>
 </div>
+<script>
+  document.addEventListener('click', function (event) {
+    var button = event.target.closest('[data-scan-host-key]');
+    if (!button) return;
+    var address = document.getElementById('address');
+    var port = document.getElementById('port');
+    var hostKey = document.getElementById('host_key');
+    var status = document.getElementById('scan_status');
+    if (!address || !hostKey || !status) return;
+    var value = address.value.trim();
+    if (!value) {
+      status.textContent = 'Enter an address to scan.';
+      status.classList.remove('text-emerald-600');
+      status.classList.add('text-rose-600');
+      return;
+    }
+    button.disabled = true;
+    button.classList.add('opacity-60', 'cursor-wait');
+    status.textContent = 'Scanning...';
+    status.classList.remove('text-rose-600');
+    status.classList.remove('text-emerald-600');
+
+    var payload = new URLSearchParams();
+    payload.set('address', value);
+    if (port && port.value.trim()) {
+      payload.set('port', port.value.trim());
+    }
+
+    fetch('/hosts/scan-key', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: payload.toString()
+    })
+      .then(function (res) {
+        return res.json().then(function (data) {
+          return { ok: res.ok, data: data };
+        });
+      })
+      .then(function (result) {
+        if (result.ok && result.data && result.data.key) {
+          hostKey.value = result.data.key;
+          status.textContent = 'Host key loaded.';
+          status.classList.remove('text-rose-600');
+          status.classList.add('text-emerald-600');
+        } else {
+          status.textContent = 'Scan failed.';
+          status.classList.remove('text-emerald-600');
+          status.classList.add('text-rose-600');
+        }
+      })
+      .catch(function () {
+        status.textContent = 'Scan failed.';
+        status.classList.remove('text-emerald-600');
+        status.classList.add('text-rose-600');
+      })
+      .finally(function () {
+        button.disabled = false;
+        button.classList.remove('opacity-60', 'cursor-wait');
+      });
+  });
+</script>
 {{end}}

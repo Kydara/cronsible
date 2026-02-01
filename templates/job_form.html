@@ -30,7 +30,10 @@
     </div>
     <div>
       <label for="schedule_hint" class="block text-sm font-semibold text-slate-700">Schedule Hint (AI helper)</label>
-      <input class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" type="text" name="schedule_hint" id="schedule_hint" placeholder="every 5 minutes, weekdays at 02:30">
+      <div class="mt-2 flex gap-2">
+        <input class="w-full flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" type="text" name="schedule_hint" id="schedule_hint" placeholder="every 5 minutes, weekdays at 02:30" value="{{.ScheduleHint}}">
+        <button type="submit" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100" formaction="/jobs/suggest" formnovalidate>Parse</button>
+      </div>
       <p class="mt-2 text-xs text-slate-500">Simple parser for common phrases.</p>
     </div>
     <div>
@@ -42,7 +45,6 @@
       <label class="text-sm font-semibold text-slate-700">Enabled</label>
     </div>
     <div class="flex flex-wrap gap-3">
-      <button type="submit" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100" formaction="/jobs/suggest" formnovalidate>Suggest Cron</button>
       <button type="submit" class="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700">Save</button>
       <a class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100" href="/jobs">Cancel</a>
     </div>

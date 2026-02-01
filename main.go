@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"html/template"
@@ -33,6 +34,7 @@ const (
 )
 
 var nameRe = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
+var hostInputRe = regexp.MustCompile(`^[A-Za-z0-9.:-]+$`)
 
 type Config struct {
 	Addr           string
@@ -142,6 +144,7 @@ type TemplateData struct {
 	SelectedJob      *Job
 	SelectedTarget   string
 	SelectedGroupIDs map[int64]bool
+	ScheduleHint     string
 	Setup            bool
 }
 
@@ -400,6 +403,7 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("/hosts", a.requireAuth(a.handleHosts))
 	mux.HandleFunc("/hosts/new", a.requireAuth(a.handleHostNew))
 	mux.HandleFunc("/hosts/create", a.requireAuth(a.handleHostCreate))
+	mux.HandleFunc("/hosts/scan-key", a.requireAuth(a.handleHostScanKey))
 	mux.HandleFunc("/hosts/edit", a.requireAuth(a.handleHostEdit))
 	mux.HandleFunc("/hosts/update", a.requireAuth(a.handleHostUpdate))
 	mux.HandleFunc("/hosts/delete", a.requireAuth(a.handleHostDelete))
@@ -682,6 +686,36 @@ func (a *App) handleHostCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = a.GenerateInventory()
 	http.Redirect(w, r, "/hosts", http.StatusSeeOther)
+}
+
+func (a *App) handleHostScanKey(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		a.writeScanKeyError(w)
+		return
+	}
+	address := strings.TrimSpace(r.FormValue("address"))
+	portStr := strings.TrimSpace(r.FormValue("port"))
+	port := 22
+	if portStr != "" {
+		if p, err := strconv.Atoi(portStr); err == nil && p > 0 && p < 65536 {
+			port = p
+		}
+	}
+	if !validHostInput(address) {
+		a.writeScanKeyError(w)
+		return
+	}
+	key, err := scanHostKey(address, port)
+	if err != nil {
+		log.Printf("host key scan failed for %s:%d: %v", address, port, err)
+		a.writeScanKeyError(w)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "key": key})
 }
 
 func (a *App) handleHostEdit(w http.ResponseWriter, r *http.Request) {
@@ -977,6 +1011,7 @@ func (a *App) handleJobSuggest(w http.ResponseWriter, r *http.Request) {
 		Groups:         groups,
 		Hosts:          hosts,
 		SelectedTarget: targetVal,
+		ScheduleHint:   hint,
 		SelectedJob: &Job{
 			Name:       name,
 			Schedule:   schedule,
@@ -1695,7 +1730,6 @@ func (r *Runner) runJob(jobID int64) {
 
 	started := time.Now().Unix()
 	cmd := exec.Command(r.cfg.AnsiblePath, targetName, "-i", r.cfg.InventoryPath, "-m", "shell", "-a", job.Command, "-o", "--private-key", key.PrivateKeyPath)
-	cmd.Env = append(os.Environ(), "ANSIBLE_HOST_KEY_CHECKING=False")
 	outputBytes, err := cmd.CombinedOutput()
 	finished := time.Now().Unix()
 	status := "success"
@@ -1822,6 +1856,13 @@ func boolToInt(b bool) int {
 	return 0
 }
 
+func validHostInput(value string) bool {
+	if value == "" || len(value) > 255 {
+		return false
+	}
+	return hostInputRe.MatchString(value)
+}
+
 func writeFile(path string, src io.Reader, perm os.FileMode) error {
 	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, perm)
 	if err != nil {
@@ -1859,6 +1900,39 @@ func derivePublicKey(privatePath string) (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(string(out)), nil
+}
+
+func scanHostKey(address string, port int) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "ssh-keyscan", "-T", "5", "-p", strconv.Itoa(port), address)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	out, err := cmd.Output()
+	if ctx.Err() == context.DeadlineExceeded {
+		return "", errors.New("ssh-keyscan timeout")
+	}
+	if err != nil {
+		return "", fmt.Errorf("ssh-keyscan failed: %w: %s", err, strings.TrimSpace(stderr.String()))
+	}
+	for _, line := range strings.Split(string(out), "\n") {
+		trim := strings.TrimSpace(line)
+		if trim == "" || strings.HasPrefix(trim, "#") {
+			continue
+		}
+		return trim, nil
+	}
+	return "", errors.New("no host key found")
+}
+
+func (a *App) writeScanKeyError(w http.ResponseWriter) {
+	writeJSON(w, http.StatusBadRequest, map[string]any{"ok": false})
+}
+
+func writeJSON(w http.ResponseWriter, status int, payload any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(payload)
 }
 
 func suggestCron(input string) (string, string) {

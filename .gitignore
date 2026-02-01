@@ -30,7 +30,4 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
-data/cronsible.db
-data/cronsible.db-wal
-data/cronsible.db-shm
-data/inventory.ini
+data/
