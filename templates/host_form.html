@@ -37,7 +37,7 @@
     <div>
       <label for="host_key" class="block text-sm font-semibold text-slate-700">Host Key</label>
       <textarea class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" name="host_key" id="host_key" rows="3" placeholder="example.com ssh-ed25519 AAAAC3Nza...">{{if .SelectedHost}}{{.SelectedHost.HostKey}}{{end}}</textarea>
-      <p class="mt-2 text-xs text-slate-500">Paste the host's public key line from known_hosts to enable strict checking.</p>
+      <p class="mt-2 text-xs text-slate-500">Paste the public key line from known_hosts or scan the host to enable strict checking.</p>
     </div>
     <div class="flex items-center gap-2 text-sm">
       <input type="checkbox" name="strict_host_checking" class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" {{if .SelectedHost}}{{if .SelectedHost.StrictHostChecking}}checked{{end}}{{end}}>
