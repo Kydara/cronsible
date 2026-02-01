@@ -8,22 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-  <script>
-    window.tailwind = {
-      config: {
-        darkMode: 'class',
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['IBM Plex Sans', 'ui-sans-serif', 'system-ui'],
-              mono: ['Space Mono', 'ui-monospace', 'SFMono-Regular', 'monospace']
-            }
-          }
-        }
-      }
-    };
-  </script>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body class="min-h-screen bg-gradient-to-br from-[#f6f1e9] via-[#f1f6f2] to-[#e6eef2] text-slate-900 dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 dark:text-slate-100">
   {{if not .HideNav}}
@@ -43,19 +28,6 @@
         <a class="{{if isActive "/keys" .CurrentPath}}rounded-full bg-emerald-600 px-3 py-1 text-white shadow-sm dark:bg-emerald-500 dark:text-slate-900{{else}}rounded-full px-3 py-1 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:text-slate-300 dark:hover:bg-emerald-900/40 dark:hover:text-emerald-200{{end}}" href="/keys">Keys</a>
         <a class="{{if isActive "/inventory" .CurrentPath}}rounded-full bg-emerald-600 px-3 py-1 text-white shadow-sm dark:bg-emerald-500 dark:text-slate-900{{else}}rounded-full px-3 py-1 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:text-slate-300 dark:hover:bg-emerald-900/40 dark:hover:text-emerald-200{{end}}" href="/inventory">Inventory</a>
         <a class="{{if isActive "/runs" .CurrentPath}}rounded-full bg-emerald-600 px-3 py-1 text-white shadow-sm dark:bg-emerald-500 dark:text-slate-900{{else}}rounded-full px-3 py-1 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:text-slate-300 dark:hover:bg-emerald-900/40 dark:hover:text-emerald-200{{end}}" href="/runs">Runs</a>
-        <button type="button" id="theme_toggle" class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800" aria-label="Toggle theme">
-          <svg id="theme_icon" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 3a1 1 0 0 1 1 1v1"></path>
-            <path d="M12 19a1 1 0 0 1 1 1v1"></path>
-            <path d="M4.22 5.64a1 1 0 0 1 1.42 0l.7.7"></path>
-            <path d="M18.36 19.78a1 1 0 0 1 1.42 0l.7.7"></path>
-            <path d="M3 12a1 1 0 0 1 1-1h1"></path>
-            <path d="M19 12a1 1 0 0 1 1-1h1"></path>
-            <path d="M4.22 18.36a1 1 0 0 0 1.42 0l.7-.7"></path>
-            <path d="M18.36 4.22a1 1 0 0 0 1.42 0l.7-.7"></path>
-            <circle cx="12" cy="12" r="4"></circle>
-          </svg>
-        </button>
         {{if .User}}
         <form action="/logout" method="post" class="ml-2">
           <button type="submit" class="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-rose-600 shadow-sm hover:border-rose-600 hover:bg-rose-600 hover:text-white dark:border-rose-900/40 dark:bg-rose-900/20 dark:text-rose-300 dark:hover:border-rose-500 dark:hover:bg-rose-500 dark:hover:text-white">Logout</button>
@@ -114,10 +86,17 @@
         }
       }
       applyTheme(stored ? stored : (prefers.matches ? 'dark' : 'light'));
-      prefers.addEventListener('change', function (event) {
-        if (localStorage.getItem('theme')) return;
-        applyTheme(event.matches ? 'dark' : 'light');
-      });
+      if (prefers.addEventListener) {
+        prefers.addEventListener('change', function (event) {
+          if (localStorage.getItem('theme')) return;
+          applyTheme(event.matches ? 'dark' : 'light');
+        });
+      } else if (prefers.addListener) {
+        prefers.addListener(function (event) {
+          if (localStorage.getItem('theme')) return;
+          applyTheme(event.matches ? 'dark' : 'light');
+        });
+      }
       var toggle = document.getElementById('theme_toggle');
       if (toggle) {
         toggle.addEventListener('click', function () {
