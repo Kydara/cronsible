@@ -1,19 +1,19 @@
 {{define "group_form"}}
-<div class="rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-sm">
+<div class="rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
   <h2 class="text-xl font-semibold">{{if .SelectedGroup}}Edit Group{{else}}New Group{{end}}</h2>
   <form method="post" action="{{if .SelectedGroup}}/groups/update{{else}}/groups/create{{end}}" class="mt-6 space-y-4">
     {{if .SelectedGroup}}<input type="hidden" name="id" value="{{.SelectedGroup.ID}}">{{end}}
     <div>
-      <label for="name" class="block text-sm font-semibold text-slate-700">Name</label>
-      <input class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" type="text" name="name" id="name" value="{{if .SelectedGroup}}{{.SelectedGroup.Name}}{{end}}" required>
+      <label for="name" class="block text-sm font-semibold text-slate-700 dark:text-slate-200">Name</label>
+      <input class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-emerald-400 dark:focus:ring-emerald-500/30" type="text" name="name" id="name" value="{{if .SelectedGroup}}{{.SelectedGroup.Name}}{{end}}" required>
     </div>
     <div>
-      <label for="description" class="block text-sm font-semibold text-slate-700">Description</label>
-      <input class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" type="text" name="description" id="description" value="{{if .SelectedGroup}}{{.SelectedGroup.Description}}{{end}}">
+      <label for="description" class="block text-sm font-semibold text-slate-700 dark:text-slate-200">Description</label>
+      <input class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-emerald-400 dark:focus:ring-emerald-500/30" type="text" name="description" id="description" value="{{if .SelectedGroup}}{{.SelectedGroup.Description}}{{end}}">
     </div>
     <div class="flex flex-wrap gap-3">
-      <button type="submit" class="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700">Save</button>
-      <a class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100" href="/groups">Cancel</a>
+      <button type="submit" class="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 dark:bg-emerald-500 dark:text-slate-900 dark:hover:bg-emerald-400">Save</button>
+      <a class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800" href="/groups">Cancel</a>
     </div>
   </form>
 </div>

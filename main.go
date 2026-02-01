@@ -37,13 +37,14 @@ var nameRe = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
 var hostInputRe = regexp.MustCompile(`^[A-Za-z0-9.:-]+$`)
 
 type Config struct {
-	Addr           string
-	DataDir        string
-	DBPath         string
-	InventoryPath  string
-	KnownHostsPath string
-	KeysDir        string
-	AnsiblePath    string
+	Addr                string
+	DataDir             string
+	DBPath              string
+	InventoryPath       string
+	KnownHostsPath      string
+	KeysDir             string
+	AnsiblePath         string
+	AnsiblePlaybookPath string
 }
 
 type App struct {
@@ -94,6 +95,7 @@ type Job struct {
 	TargetID   int64
 	Schedule   string
 	Command    string
+	Format     string
 	Enabled    bool
 }
 
@@ -145,6 +147,7 @@ type TemplateData struct {
 	SelectedTarget   string
 	SelectedGroupIDs map[int64]bool
 	ScheduleHint     string
+	JobFormat        string
 	Setup            bool
 }
 
@@ -208,18 +211,23 @@ func loadConfig() Config {
 	if ansiblePath == "" {
 		ansiblePath = "ansible"
 	}
+	ansiblePlaybookPath := os.Getenv("CRONSIBLE_ANSIBLE_PLAYBOOK_PATH")
+	if ansiblePlaybookPath == "" {
+		ansiblePlaybookPath = "ansible-playbook"
+	}
 	addr := os.Getenv("CRONSIBLE_ADDR")
 	if addr == "" {
 		addr = ":8080"
 	}
 	return Config{
-		Addr:           addr,
-		DataDir:        dataDir,
-		DBPath:         filepath.Join(dataDir, "cronsible.db"),
-		InventoryPath:  filepath.Join(dataDir, "inventory.ini"),
-		KnownHostsPath: filepath.Join(dataDir, "known_hosts"),
-		KeysDir:        filepath.Join(dataDir, "keys"),
-		AnsiblePath:    ansiblePath,
+		Addr:                addr,
+		DataDir:             dataDir,
+		DBPath:              filepath.Join(dataDir, "cronsible.db"),
+		InventoryPath:       filepath.Join(dataDir, "inventory.ini"),
+		KnownHostsPath:      filepath.Join(dataDir, "known_hosts"),
+		KeysDir:             filepath.Join(dataDir, "keys"),
+		AnsiblePath:         ansiblePath,
+		AnsiblePlaybookPath: ansiblePlaybookPath,
 	}
 }
 
@@ -297,6 +305,7 @@ func migrate(db *sql.DB) error {
 			target_id INTEGER NOT NULL,
 			schedule TEXT NOT NULL,
 			command TEXT NOT NULL,
+			job_format TEXT NOT NULL DEFAULT 'shell',
 			enabled INTEGER NOT NULL DEFAULT 1,
 			created_at INTEGER NOT NULL,
 			updated_at INTEGER NOT NULL
@@ -326,6 +335,9 @@ func migrate(db *sql.DB) error {
 		return err
 	}
 	if err := ensureColumn(db, "hosts", "strict_host_checking", "INTEGER NOT NULL DEFAULT 0"); err != nil {
+		return err
+	}
+	if err := ensureColumn(db, "jobs", "job_format", "TEXT NOT NULL DEFAULT 'shell'"); err != nil {
 		return err
 	}
 	return nil
@@ -926,7 +938,7 @@ func (a *App) handleJobs(w http.ResponseWriter, r *http.Request) {
 func (a *App) handleJobNew(w http.ResponseWriter, r *http.Request) {
 	groups, _ := a.listGroups()
 	hosts, _ := a.listHosts()
-	data := &TemplateData{Title: "New Job", Groups: groups, Hosts: hosts}
+	data := &TemplateData{Title: "New Job", Groups: groups, Hosts: hosts, JobFormat: "shell"}
 	a.render(w, r, "job_form", data)
 }
 
@@ -942,28 +954,32 @@ func (a *App) handleJobCreate(w http.ResponseWriter, r *http.Request) {
 	name := strings.TrimSpace(r.FormValue("name"))
 	schedule := strings.TrimSpace(r.FormValue("schedule"))
 	command := strings.TrimSpace(r.FormValue("command"))
+	format := strings.TrimSpace(r.FormValue("job_format"))
+	if format == "" {
+		format = "shell"
+	}
 	enabled := r.FormValue("enabled") == "on"
 	targetType, targetID, err := parseTarget(r.FormValue("target"))
 	if err != nil {
 		a.render(w, r, "job_form", &TemplateData{Title: "New Job", Error: "invalid target"})
 		return
 	}
-	if !validName(name) || schedule == "" || command == "" {
+	if !validName(name) || schedule == "" || command == "" || !validJobFormat(format) {
 		groups, _ := a.listGroups()
 		hosts, _ := a.listHosts()
-		data := &TemplateData{Title: "New Job", Error: "invalid job data", Groups: groups, Hosts: hosts, SelectedTarget: r.FormValue("target"), SelectedJob: &Job{Name: name, Schedule: schedule, Command: command, Enabled: enabled, TargetType: targetType, TargetID: targetID}}
+		data := &TemplateData{Title: "New Job", Error: "invalid job data", Groups: groups, Hosts: hosts, SelectedTarget: r.FormValue("target"), JobFormat: format, SelectedJob: &Job{Name: name, Schedule: schedule, Command: command, Enabled: enabled, TargetType: targetType, TargetID: targetID, Format: format}}
 		a.render(w, r, "job_form", data)
 		return
 	}
 	if _, err := cron.ParseStandard(schedule); err != nil {
 		groups, _ := a.listGroups()
 		hosts, _ := a.listHosts()
-		data := &TemplateData{Title: "New Job", Error: "invalid cron schedule", Groups: groups, Hosts: hosts, SelectedTarget: r.FormValue("target"), SelectedJob: &Job{Name: name, Schedule: schedule, Command: command, Enabled: enabled, TargetType: targetType, TargetID: targetID}}
+		data := &TemplateData{Title: "New Job", Error: "invalid cron schedule", Groups: groups, Hosts: hosts, SelectedTarget: r.FormValue("target"), JobFormat: format, SelectedJob: &Job{Name: name, Schedule: schedule, Command: command, Enabled: enabled, TargetType: targetType, TargetID: targetID, Format: format}}
 		a.render(w, r, "job_form", data)
 		return
 	}
 	now := time.Now().Unix()
-	_, err = a.db.Exec(`INSERT INTO jobs (name, target_type, target_id, schedule, command, enabled, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, name, targetType, targetID, schedule, command, boolToInt(enabled), now, now)
+	_, err = a.db.Exec(`INSERT INTO jobs (name, target_type, target_id, schedule, command, job_format, enabled, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, name, targetType, targetID, schedule, command, format, boolToInt(enabled), now, now)
 	if err != nil {
 		groups, _ := a.listGroups()
 		hosts, _ := a.listHosts()
@@ -987,6 +1003,10 @@ func (a *App) handleJobSuggest(w http.ResponseWriter, r *http.Request) {
 	name := strings.TrimSpace(r.FormValue("name"))
 	schedule := strings.TrimSpace(r.FormValue("schedule"))
 	command := strings.TrimSpace(r.FormValue("command"))
+	format := strings.TrimSpace(r.FormValue("job_format"))
+	if format == "" {
+		format = "shell"
+	}
 	enabled := r.FormValue("enabled") == "on"
 	targetVal := r.FormValue("target")
 	targetType, targetID, _ := parseTarget(targetVal)
@@ -1012,6 +1032,7 @@ func (a *App) handleJobSuggest(w http.ResponseWriter, r *http.Request) {
 		Hosts:          hosts,
 		SelectedTarget: targetVal,
 		ScheduleHint:   hint,
+		JobFormat:      format,
 		SelectedJob: &Job{
 			Name:       name,
 			Schedule:   schedule,
@@ -1019,6 +1040,7 @@ func (a *App) handleJobSuggest(w http.ResponseWriter, r *http.Request) {
 			Enabled:    enabled,
 			TargetType: targetType,
 			TargetID:   targetID,
+			Format:     format,
 		},
 	}
 	a.render(w, r, "job_form", data)
@@ -1037,7 +1059,7 @@ func (a *App) handleJobEdit(w http.ResponseWriter, r *http.Request) {
 	}
 	groups, _ := a.listGroups()
 	hosts, _ := a.listHosts()
-	data := &TemplateData{Title: "Edit Job", SelectedJob: job, Groups: groups, Hosts: hosts}
+	data := &TemplateData{Title: "Edit Job", SelectedJob: job, Groups: groups, Hosts: hosts, JobFormat: job.Format}
 	data.SelectedTarget = fmt.Sprintf("%s:%d", job.TargetType, job.TargetID)
 	a.render(w, r, "job_form", data)
 }
@@ -1059,27 +1081,31 @@ func (a *App) handleJobUpdate(w http.ResponseWriter, r *http.Request) {
 	name := strings.TrimSpace(r.FormValue("name"))
 	schedule := strings.TrimSpace(r.FormValue("schedule"))
 	command := strings.TrimSpace(r.FormValue("command"))
+	format := strings.TrimSpace(r.FormValue("job_format"))
+	if format == "" {
+		format = "shell"
+	}
 	enabled := r.FormValue("enabled") == "on"
 	targetType, targetID, err := parseTarget(r.FormValue("target"))
 	if err != nil {
 		http.Redirect(w, r, "/jobs", http.StatusSeeOther)
 		return
 	}
-	if !validName(name) || schedule == "" || command == "" {
+	if !validName(name) || schedule == "" || command == "" || !validJobFormat(format) {
 		groups, _ := a.listGroups()
 		hosts, _ := a.listHosts()
-		data := &TemplateData{Title: "Edit Job", Error: "invalid job data", Groups: groups, Hosts: hosts, SelectedJob: &Job{ID: id, Name: name, Schedule: schedule, Command: command, Enabled: enabled, TargetType: targetType, TargetID: targetID}, SelectedTarget: fmt.Sprintf("%s:%d", targetType, targetID)}
+		data := &TemplateData{Title: "Edit Job", Error: "invalid job data", Groups: groups, Hosts: hosts, JobFormat: format, SelectedJob: &Job{ID: id, Name: name, Schedule: schedule, Command: command, Enabled: enabled, TargetType: targetType, TargetID: targetID, Format: format}, SelectedTarget: fmt.Sprintf("%s:%d", targetType, targetID)}
 		a.render(w, r, "job_form", data)
 		return
 	}
 	if _, err := cron.ParseStandard(schedule); err != nil {
 		groups, _ := a.listGroups()
 		hosts, _ := a.listHosts()
-		data := &TemplateData{Title: "Edit Job", Error: "invalid cron schedule", Groups: groups, Hosts: hosts, SelectedJob: &Job{ID: id, Name: name, Schedule: schedule, Command: command, Enabled: enabled, TargetType: targetType, TargetID: targetID}, SelectedTarget: fmt.Sprintf("%s:%d", targetType, targetID)}
+		data := &TemplateData{Title: "Edit Job", Error: "invalid cron schedule", Groups: groups, Hosts: hosts, JobFormat: format, SelectedJob: &Job{ID: id, Name: name, Schedule: schedule, Command: command, Enabled: enabled, TargetType: targetType, TargetID: targetID, Format: format}, SelectedTarget: fmt.Sprintf("%s:%d", targetType, targetID)}
 		a.render(w, r, "job_form", data)
 		return
 	}
-	_, err = a.db.Exec(`UPDATE jobs SET name = ?, target_type = ?, target_id = ?, schedule = ?, command = ?, enabled = ?, updated_at = ? WHERE id = ?`, name, targetType, targetID, schedule, command, boolToInt(enabled), time.Now().Unix(), id)
+	_, err = a.db.Exec(`UPDATE jobs SET name = ?, target_type = ?, target_id = ?, schedule = ?, command = ?, job_format = ?, enabled = ?, updated_at = ? WHERE id = ?`, name, targetType, targetID, schedule, command, format, boolToInt(enabled), time.Now().Unix(), id)
 	if err != nil {
 		groups, _ := a.listGroups()
 		hosts, _ := a.listHosts()
@@ -1348,7 +1374,7 @@ func (a *App) getGroup(id int64) (*Group, error) {
 }
 
 func (a *App) listJobs() ([]JobView, error) {
-	rows, err := a.db.Query(`SELECT j.id, j.name, j.target_type, j.target_id, j.schedule, j.command, j.enabled,
+	rows, err := a.db.Query(`SELECT j.id, j.name, j.target_type, j.target_id, j.schedule, j.command, j.job_format, j.enabled,
 		CASE WHEN j.target_type = 'host' THEN h.name ELSE g.name END AS target_name
 		FROM jobs j
 		LEFT JOIN hosts h ON j.target_type = 'host' AND j.target_id = h.id
@@ -1362,8 +1388,11 @@ func (a *App) listJobs() ([]JobView, error) {
 	for rows.Next() {
 		var j JobView
 		var enabled int
-		if err := rows.Scan(&j.ID, &j.Name, &j.TargetType, &j.TargetID, &j.Schedule, &j.Command, &enabled, &j.TargetName); err != nil {
+		if err := rows.Scan(&j.ID, &j.Name, &j.TargetType, &j.TargetID, &j.Schedule, &j.Command, &j.Format, &enabled, &j.TargetName); err != nil {
 			return nil, err
+		}
+		if j.Format == "" {
+			j.Format = "shell"
 		}
 		j.Enabled = enabled == 1
 		j.NextRun = a.nextRunForJob(j.ID)
@@ -1375,9 +1404,12 @@ func (a *App) listJobs() ([]JobView, error) {
 func (a *App) getJob(id int64) (*Job, error) {
 	var j Job
 	var enabled int
-	row := a.db.QueryRow(`SELECT id, name, target_type, target_id, schedule, command, enabled FROM jobs WHERE id = ?`, id)
-	if err := row.Scan(&j.ID, &j.Name, &j.TargetType, &j.TargetID, &j.Schedule, &j.Command, &enabled); err != nil {
+	row := a.db.QueryRow(`SELECT id, name, target_type, target_id, schedule, command, job_format, enabled FROM jobs WHERE id = ?`, id)
+	if err := row.Scan(&j.ID, &j.Name, &j.TargetType, &j.TargetID, &j.Schedule, &j.Command, &j.Format, &enabled); err != nil {
 		return nil, err
+	}
+	if j.Format == "" {
+		j.Format = "shell"
 	}
 	j.Enabled = enabled == 1
 	return &j, nil
@@ -1703,8 +1735,8 @@ func (r *Runner) loop() {
 func (r *Runner) runJob(jobID int64) {
 	var job Job
 	var enabled int
-	row := r.db.QueryRow(`SELECT id, name, target_type, target_id, schedule, command, enabled FROM jobs WHERE id = ?`, jobID)
-	if err := row.Scan(&job.ID, &job.Name, &job.TargetType, &job.TargetID, &job.Schedule, &job.Command, &enabled); err != nil {
+	row := r.db.QueryRow(`SELECT id, name, target_type, target_id, schedule, command, job_format, enabled FROM jobs WHERE id = ?`, jobID)
+	if err := row.Scan(&job.ID, &job.Name, &job.TargetType, &job.TargetID, &job.Schedule, &job.Command, &job.Format, &enabled); err != nil {
 		return
 	}
 	if enabled != 1 {
@@ -1729,7 +1761,46 @@ func (r *Runner) runJob(jobID int64) {
 	}
 
 	started := time.Now().Unix()
-	cmd := exec.Command(r.cfg.AnsiblePath, targetName, "-i", r.cfg.InventoryPath, "-m", "shell", "-a", job.Command, "-o", "--private-key", key.PrivateKeyPath)
+	format := strings.TrimSpace(strings.ToLower(job.Format))
+	if format == "" {
+		format = "shell"
+	}
+	playbook := ""
+	switch format {
+	case "shell":
+		playbook = buildShellPlaybook(job.Command)
+	case "playbook":
+		playbook = strings.TrimSpace(job.Command)
+		if playbook == "" {
+			r.recordRun(job.ID, "failed", 1, "empty playbook")
+			return
+		}
+	default:
+		r.recordRun(job.ID, "failed", 1, "invalid job format")
+		return
+	}
+	if !strings.HasSuffix(playbook, "\n") {
+		playbook += "\n"
+	}
+	tmpFile, err := os.CreateTemp(r.cfg.DataDir, fmt.Sprintf("job-%d-*.yml", job.ID))
+	if err != nil {
+		r.recordRun(job.ID, "failed", 1, "failed to create playbook file")
+		return
+	}
+	if _, err := tmpFile.WriteString(playbook); err != nil {
+		_ = tmpFile.Close()
+		_ = os.Remove(tmpFile.Name())
+		r.recordRun(job.ID, "failed", 1, "failed to write playbook file")
+		return
+	}
+	if err := tmpFile.Close(); err != nil {
+		_ = os.Remove(tmpFile.Name())
+		r.recordRun(job.ID, "failed", 1, "failed to save playbook file")
+		return
+	}
+	defer os.Remove(tmpFile.Name())
+
+	cmd := exec.Command(r.cfg.AnsiblePlaybookPath, "-i", r.cfg.InventoryPath, "--private-key", key.PrivateKeyPath, "--limit", targetName, tmpFile.Name())
 	outputBytes, err := cmd.CombinedOutput()
 	finished := time.Now().Unix()
 	status := "success"
@@ -1856,6 +1927,15 @@ func boolToInt(b bool) int {
 	return 0
 }
 
+func validJobFormat(value string) bool {
+	switch value {
+	case "shell", "playbook":
+		return true
+	default:
+		return false
+	}
+}
+
 func validHostInput(value string) bool {
 	if value == "" || len(value) > 255 {
 		return false
@@ -1871,6 +1951,26 @@ func writeFile(path string, src io.Reader, perm os.FileMode) error {
 	defer f.Close()
 	_, err = io.Copy(f, src)
 	return err
+}
+
+func buildShellPlaybook(command string) string {
+	var b strings.Builder
+	b.WriteString("- hosts: all\n")
+	b.WriteString("  gather_facts: false\n")
+	b.WriteString("  tasks:\n")
+	b.WriteString("    - name: Run command\n")
+	b.WriteString("      ansible.builtin.shell:\n")
+	b.WriteString("        cmd: |\n")
+	lines := strings.Split(command, "\n")
+	if len(lines) == 0 {
+		lines = []string{""}
+	}
+	for _, line := range lines {
+		b.WriteString("          ")
+		b.WriteString(line)
+		b.WriteString("\n")
+	}
+	return b.String()
 }
 
 func readPublicKey(publicPath, privatePath string) string {

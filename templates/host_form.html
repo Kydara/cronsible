@@ -1,51 +1,51 @@
 {{define "host_form"}}
-<div class="rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-sm">
+<div class="rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
   <h2 class="text-xl font-semibold">{{if .SelectedHost}}Edit Host{{else}}New Host{{end}}</h2>
   <form method="post" action="{{if .SelectedHost}}/hosts/update{{else}}/hosts/create{{end}}" class="mt-6 space-y-4">
     {{if .SelectedHost}}<input type="hidden" name="id" value="{{.SelectedHost.ID}}">{{end}}
     <div>
-      <label for="name" class="block text-sm font-semibold text-slate-700">Name</label>
-      <input class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" type="text" name="name" id="name" value="{{if .SelectedHost}}{{.SelectedHost.Name}}{{end}}" required>
+      <label for="name" class="block text-sm font-semibold text-slate-700 dark:text-slate-200">Name</label>
+      <input class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-emerald-400 dark:focus:ring-emerald-500/30" type="text" name="name" id="name" value="{{if .SelectedHost}}{{.SelectedHost.Name}}{{end}}" required>
     </div>
     <div>
-      <label for="address" class="block text-sm font-semibold text-slate-700">Address</label>
+      <label for="address" class="block text-sm font-semibold text-slate-700 dark:text-slate-200">Address</label>
       <div class="mt-2 flex gap-2">
-        <input class="w-full flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" type="text" name="address" id="address" value="{{if .SelectedHost}}{{.SelectedHost.Address}}{{end}}" required>
-        <button type="button" class="inline-flex items-center whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100" data-scan-host-key>Scan key</button>
+        <input class="w-full flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-emerald-400 dark:focus:ring-emerald-500/30" type="text" name="address" id="address" value="{{if .SelectedHost}}{{.SelectedHost.Address}}{{end}}" required>
+        <button type="button" class="inline-flex items-center whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800" data-scan-host-key>Scan key</button>
       </div>
-      <p id="scan_status" class="mt-2 text-xs text-slate-500"></p>
+      <p id="scan_status" class="mt-2 text-xs text-slate-500 dark:text-slate-400"></p>
     </div>
     <div class="grid gap-4 md:grid-cols-2">
       <div>
-        <label for="user" class="block text-sm font-semibold text-slate-700">SSH User</label>
-        <input class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" type="text" name="user" id="user" value="{{if .SelectedHost}}{{.SelectedHost.User}}{{end}}" required>
+        <label for="user" class="block text-sm font-semibold text-slate-700 dark:text-slate-200">SSH User</label>
+        <input class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-emerald-400 dark:focus:ring-emerald-500/30" type="text" name="user" id="user" value="{{if .SelectedHost}}{{.SelectedHost.User}}{{end}}" required>
       </div>
       <div>
-        <label for="port" class="block text-sm font-semibold text-slate-700">SSH Port</label>
-        <input class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" type="text" name="port" id="port" value="{{if .SelectedHost}}{{.SelectedHost.Port}}{{else}}22{{end}}">
+        <label for="port" class="block text-sm font-semibold text-slate-700 dark:text-slate-200">SSH Port</label>
+        <input class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-emerald-400 dark:focus:ring-emerald-500/30" type="text" name="port" id="port" value="{{if .SelectedHost}}{{.SelectedHost.Port}}{{else}}22{{end}}">
       </div>
     </div>
     <div>
-      <label for="groups" class="block text-sm font-semibold text-slate-700">Groups</label>
-      <select class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" name="group_ids" id="groups" multiple size="5">
+      <label for="groups" class="block text-sm font-semibold text-slate-700 dark:text-slate-200">Groups</label>
+      <select class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-emerald-400 dark:focus:ring-emerald-500/30" name="group_ids" id="groups" multiple size="5">
         {{range .Groups}}
         <option value="{{.ID}}" {{if index $.SelectedGroupIDs .ID}}selected{{end}}>{{.Name}}</option>
         {{end}}
       </select>
-      <p class="mt-2 text-xs text-slate-500">Hold Ctrl/Cmd to select multiple groups.</p>
+      <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Hold Ctrl/Cmd to select multiple groups.</p>
     </div>
     <div>
-      <label for="host_key" class="block text-sm font-semibold text-slate-700">Host Key</label>
-      <textarea class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" name="host_key" id="host_key" rows="3" placeholder="example.com ssh-ed25519 AAAAC3Nza...">{{if .SelectedHost}}{{.SelectedHost.HostKey}}{{end}}</textarea>
-      <p class="mt-2 text-xs text-slate-500">Paste the public key line from known_hosts or scan the host to enable strict checking.</p>
+      <label for="host_key" class="block text-sm font-semibold text-slate-700 dark:text-slate-200">Host Key</label>
+      <textarea class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-emerald-400 dark:focus:ring-emerald-500/30" name="host_key" id="host_key" rows="3" placeholder="example.com ssh-ed25519 AAAAC3Nza...">{{if .SelectedHost}}{{.SelectedHost.HostKey}}{{end}}</textarea>
+      <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Paste the public key line from known_hosts or scan the host to enable strict checking.</p>
     </div>
     <div class="flex items-center gap-2 text-sm">
-      <input type="checkbox" name="strict_host_checking" class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" {{if .SelectedHost}}{{if .SelectedHost.StrictHostChecking}}checked{{end}}{{end}}>
-      <label class="text-sm font-semibold text-slate-700">Strict host key checking</label>
+      <input type="checkbox" name="strict_host_checking" class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-900 dark:focus:ring-emerald-500/30" {{if .SelectedHost}}{{if .SelectedHost.StrictHostChecking}}checked{{end}}{{end}}>
+      <label class="text-sm font-semibold text-slate-700 dark:text-slate-200">Strict host key checking</label>
     </div>
     <div class="flex flex-wrap gap-3">
-      <button type="submit" class="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700">Save</button>
-      <a class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100" href="/hosts">Cancel</a>
+      <button type="submit" class="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 dark:bg-emerald-500 dark:text-slate-900 dark:hover:bg-emerald-400">Save</button>
+      <a class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800" href="/hosts">Cancel</a>
     </div>
   </form>
 </div>
