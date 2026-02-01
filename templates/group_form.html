@@ -1,19 +1,19 @@
 {{define "group_form"}}
-<div class="card" style="max-width:640px;">
-  <h2>{{if .SelectedGroup}}Edit Group{{else}}New Group{{end}}</h2>
-  <form method="post" action="{{if .SelectedGroup}}/groups/update{{else}}/groups/create{{end}}">
+<div class="rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-sm">
+  <h2 class="text-xl font-semibold">{{if .SelectedGroup}}Edit Group{{else}}New Group{{end}}</h2>
+  <form method="post" action="{{if .SelectedGroup}}/groups/update{{else}}/groups/create{{end}}" class="mt-6 space-y-4">
     {{if .SelectedGroup}}<input type="hidden" name="id" value="{{.SelectedGroup.ID}}">{{end}}
-    <div class="form-row">
-      <label for="name">Name</label>
-      <input type="text" name="name" id="name" value="{{if .SelectedGroup}}{{.SelectedGroup.Name}}{{end}}" required>
+    <div>
+      <label for="name" class="block text-sm font-semibold text-slate-700">Name</label>
+      <input class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" type="text" name="name" id="name" value="{{if .SelectedGroup}}{{.SelectedGroup.Name}}{{end}}" required>
     </div>
-    <div class="form-row">
-      <label for="description">Description</label>
-      <input type="text" name="description" id="description" value="{{if .SelectedGroup}}{{.SelectedGroup.Description}}{{end}}">
+    <div>
+      <label for="description" class="block text-sm font-semibold text-slate-700">Description</label>
+      <input class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" type="text" name="description" id="description" value="{{if .SelectedGroup}}{{.SelectedGroup.Description}}{{end}}">
     </div>
-    <div class="actions">
-      <button type="submit">Save</button>
-      <a class="btn secondary" href="/groups">Cancel</a>
+    <div class="flex flex-wrap gap-3">
+      <button type="submit" class="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700">Save</button>
+      <a class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100" href="/groups">Cancel</a>
     </div>
   </form>
 </div>

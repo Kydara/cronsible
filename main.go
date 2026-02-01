@@ -351,8 +351,6 @@ func parseTemplates() (*template.Template, error) {
 func (a *App) routes() http.Handler {
 	mux := http.NewServeMux()
 
-	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-
 	mux.HandleFunc("/", a.requireAuth(a.handleHome))
 	mux.HandleFunc("/setup", a.handleSetup)
 	mux.HandleFunc("/login", a.handleLogin)
@@ -601,6 +599,10 @@ func (a *App) handleHostCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	name := strings.TrimSpace(r.FormValue("name"))
+	if name == "" {
+		a.renderKeysError(w, r, "key name is required")
+		return
+	}
 	address := strings.TrimSpace(r.FormValue("address"))
 	user := strings.TrimSpace(r.FormValue("user"))
 	portStr := strings.TrimSpace(r.FormValue("port"))
@@ -1018,48 +1020,57 @@ func (a *App) handleKeys(w http.ResponseWriter, r *http.Request) {
 	a.render(w, r, "keys", data)
 }
 
+func (a *App) renderKeysError(w http.ResponseWriter, r *http.Request, msg string) {
+	keys, _ := a.listKeys()
+	activeKeyID, _ := a.activeKeyID()
+	data := &TemplateData{Title: "Keys", Keys: keys, ActiveKeyID: activeKeyID, Error: msg}
+	a.render(w, r, "keys", data)
+}
+
 func (a *App) handleKeyUpload(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Redirect(w, r, "/keys", http.StatusSeeOther)
 		return
 	}
 	if err := r.ParseMultipartForm(10 << 20); err != nil {
-		http.Redirect(w, r, "/keys", http.StatusSeeOther)
+		a.renderKeysError(w, r, "invalid upload form")
 		return
 	}
 	name := strings.TrimSpace(r.FormValue("name"))
 	file, header, err := r.FormFile("private_key")
 	if err != nil {
-		http.Redirect(w, r, "/keys", http.StatusSeeOther)
+		a.renderKeysError(w, r, "private key file required")
 		return
 	}
 	defer file.Close()
 	if name == "" {
 		name = strings.TrimSuffix(header.Filename, filepath.Ext(header.Filename))
 	}
-	if name == "" {
-		name = "uploaded"
-	}
 	keyID, err := randomToken(6)
 	if err != nil {
-		http.Redirect(w, r, "/keys", http.StatusSeeOther)
+		a.renderKeysError(w, r, "failed to create key")
 		return
 	}
 	privatePath := filepath.Join(a.cfg.KeysDir, fmt.Sprintf("%s_%s", sanitizeName(name), keyID))
 	if err := writeFile(privatePath, file, 0o600); err != nil {
-		http.Redirect(w, r, "/keys", http.StatusSeeOther)
+		a.renderKeysError(w, r, "failed to save private key")
+		return
+	}
+	pubKey, err := derivePublicKey(privatePath)
+	if err != nil {
+		_ = os.Remove(privatePath)
+		a.renderKeysError(w, r, "invalid private key or passphrase-protected")
+		return
+	}
+	publicPath := privatePath + ".pub"
+	if err := os.WriteFile(publicPath, []byte(pubKey+"\n"), 0o644); err != nil {
+		_ = os.Remove(privatePath)
+		a.renderKeysError(w, r, "failed to write public key")
 		return
 	}
 
-	var publicPath string
-	pubFile, _, err := r.FormFile("public_key")
-	if err == nil {
-		defer pubFile.Close()
-		publicPath = privatePath + ".pub"
-		_ = writeFile(publicPath, pubFile, 0o644)
-	}
-
 	_, _ = a.db.Exec(`INSERT INTO ssh_keys (name, private_key_path, public_key_path, created_at) VALUES (?, ?, ?, ?)`, name, privatePath, publicPath, time.Now().Unix())
+	a.ensureSingleKeyActive()
 	http.Redirect(w, r, "/keys", http.StatusSeeOther)
 }
 
@@ -1074,7 +1085,8 @@ func (a *App) handleKeyGenerate(w http.ResponseWriter, r *http.Request) {
 	}
 	name := strings.TrimSpace(r.FormValue("name"))
 	if name == "" {
-		name = "generated"
+		a.renderKeysError(w, r, "key name is required")
+		return
 	}
 	slug := sanitizeName(name)
 	keyID, _ := randomToken(6)
@@ -1086,6 +1098,7 @@ func (a *App) handleKeyGenerate(w http.ResponseWriter, r *http.Request) {
 	}
 	publicPath := privatePath + ".pub"
 	_, _ = a.db.Exec(`INSERT INTO ssh_keys (name, private_key_path, public_key_path, created_at) VALUES (?, ?, ?, ?)`, name, privatePath, publicPath, time.Now().Unix())
+	a.ensureSingleKeyActive()
 	http.Redirect(w, r, "/keys", http.StatusSeeOther)
 }
 
@@ -1125,6 +1138,7 @@ func (a *App) handleKeyDelete(w http.ResponseWriter, r *http.Request) {
 	if publicPath != "" {
 		_ = os.Remove(publicPath)
 	}
+	a.ensureSingleKeyActive()
 	http.Redirect(w, r, "/keys", http.StatusSeeOther)
 }
 
@@ -1461,6 +1475,21 @@ func (a *App) getActiveKey() (*Key, error) {
 	return &k, nil
 }
 
+func (a *App) ensureSingleKeyActive() {
+	var count int
+	if err := a.db.QueryRow(`SELECT COUNT(*) FROM ssh_keys`).Scan(&count); err != nil {
+		return
+	}
+	if count != 1 {
+		return
+	}
+	var id int64
+	if err := a.db.QueryRow(`SELECT id FROM ssh_keys LIMIT 1`).Scan(&id); err != nil {
+		return
+	}
+	_, _ = a.db.Exec(`INSERT INTO settings (key, value) VALUES ('active_key_id', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value`, fmt.Sprintf("%d", id))
+}
+
 func (a *App) ReloadAllJobs() error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -1706,13 +1735,26 @@ func readPublicKey(publicPath, privatePath string) string {
 		}
 	}
 	if privatePath != "" {
-		cmd := exec.Command("ssh-keygen", "-y", "-f", privatePath)
-		out, err := cmd.Output()
-		if err == nil {
-			return strings.TrimSpace(string(out))
+		if out, err := derivePublicKey(privatePath); err == nil {
+			return strings.TrimSpace(out)
 		}
 	}
 	return ""
+}
+
+func derivePublicKey(privatePath string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "ssh-keygen", "-y", "-f", privatePath)
+	cmd.Stdin = strings.NewReader("\n")
+	out, err := cmd.Output()
+	if ctx.Err() == context.DeadlineExceeded {
+		return "", errors.New("ssh-keygen timeout")
+	}
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(out)), nil
 }
 
 func suggestCron(input string) (string, string) {

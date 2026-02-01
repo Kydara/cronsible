@@ -1,95 +1,120 @@
 {{define "keys"}}
-<div class="grid">
-  <div class="card">
-    <h2>SSH Keys</h2>
+<div class="grid gap-6 lg:grid-cols-3">
+  <div class="rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-sm lg:col-span-2">
+    <div class="flex items-center justify-between gap-4">
+      <div>
+        <h2 class="text-xl font-semibold">SSH Keys</h2>
+        <p class="text-sm text-slate-500">Manage key pairs for Ansible.</p>
+      </div>
+    </div>
     {{if .Keys}}
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Created</th>
-          <th>Active</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {{range .Keys}}
-        <tr>
-          <td>{{.Name}}</td>
-          <td>{{formatTime .CreatedAt}}</td>
-          <td>{{if eq .ID $.ActiveKeyID}}<span class="pill good">active</span>{{else}}<span class="pill">-</span>{{end}}</td>
-          <td>
-            <div class="actions">
-              <form method="post" action="/keys/activate">
-                <input type="hidden" name="id" value="{{.ID}}">
-                <button type="submit" class="secondary">Set Active</button>
-              </form>
-              <a class="btn secondary" href="#pubkey-{{.ID}}">Show Public Key</a>
-              <form method="post" action="/keys/delete">
-                <input type="hidden" name="id" value="{{.ID}}">
-                <button type="submit" class="danger">Delete</button>
-              </form>
-            </div>
-          </td>
-        </tr>
-        {{end}}
-      </tbody>
-    </table>
+    <div class="mt-6 overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="text-xs uppercase tracking-wide text-slate-500">
+          <tr>
+            <th class="px-3 py-2 text-left">Name</th>
+            <th class="px-3 py-2 text-left">Created</th>
+          <th class="px-3 py-2 text-left">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200">
+          {{range .Keys}}
+          <tr>
+            <td class="px-3 py-3 font-semibold">{{.Name}}</td>
+            <td class="px-3 py-3 text-sm text-slate-600">{{formatTime .CreatedAt}}</td>
+            <td class="px-3 py-3">
+              <div class="flex flex-wrap gap-2">
+                <form method="post" action="/keys/activate">
+                  <input type="hidden" name="id" value="{{.ID}}">
+                  {{if eq .ID $.ActiveKeyID}}
+                  <button type="submit" class="group relative inline-flex items-center rounded-lg bg-emerald-600 px-3 py-1 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700" aria-label="Active key">
+                    Active
+                    <span class="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black px-2 py-1 text-[10px] font-medium text-white opacity-0 group-hover:opacity-100">Active key</span>
+                  </button>
+                  {{else}}
+                  <button type="submit" class="group relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100" aria-label="Set active key">
+                    Set Active
+                    <span class="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black px-2 py-1 text-[10px] font-medium text-white opacity-0 group-hover:opacity-100">Set active</span>
+                  </button>
+                  {{end}}
+                </form>
+                <button type="button" class="group relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100" data-modal-open="pubkey-{{.ID}}" aria-label="Show public key">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <span class="sr-only">Show public key</span>
+                  <span class="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black px-2 py-1 text-[10px] font-medium text-white opacity-0 group-hover:opacity-100">Show public key</span>
+                </button>
+                <form method="post" action="/keys/delete">
+                  <input type="hidden" name="id" value="{{.ID}}">
+                  <button type="submit" class="group relative inline-flex items-center rounded-lg bg-rose-600 px-2.5 py-1 text-xs font-semibold text-white shadow-sm hover:bg-rose-700" aria-label="Delete key">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M3 6h18"></path>
+                      <path d="M8 6V4h8v2"></path>
+                      <path d="M6 6l1 14h10l1-14"></path>
+                      <path d="M10 10v6"></path>
+                      <path d="M14 10v6"></path>
+                    </svg>
+                    <span class="sr-only">Delete</span>
+                    <span class="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black px-2 py-1 text-[10px] font-medium text-white opacity-0 group-hover:opacity-100">Delete key</span>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
     {{else}}
-    <p class="muted">No keys yet.</p>
+    <p class="mt-6 text-sm text-slate-500">No keys yet.</p>
     {{end}}
   </div>
-  <div class="card">
-    <h3>Upload Key</h3>
-    <form method="post" action="/keys/upload" enctype="multipart/form-data">
-      <div class="form-row">
-        <label for="name">Name</label>
-        <input type="text" name="name" id="name" placeholder="production-key">
+  <div class="rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-sm">
+    <h3 class="text-lg font-semibold">Upload Key</h3>
+    <form method="post" action="/keys/upload" enctype="multipart/form-data" class="mt-4 space-y-4">
+      <div>
+        <label for="name" class="block text-sm font-semibold text-slate-700">Name</label>
+        <input class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" type="text" name="name" id="name" value="upload-{{nowUnix}}">
       </div>
-      <div class="form-row">
-        <label for="private_key">Private Key</label>
-        <input type="file" name="private_key" id="private_key" required>
+      <div>
+        <label for="private_key" class="block text-sm font-semibold text-slate-700">Private Key</label>
+        <input class="mt-2 w-full text-sm" type="file" name="private_key" id="private_key" required>
       </div>
-      <div class="form-row">
-        <label for="public_key">Public Key (optional)</label>
-        <input type="file" name="public_key" id="public_key">
-      </div>
-      <div class="actions">
-        <button type="submit">Upload</button>
-      </div>
+      <button type="submit" class="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700">Upload</button>
     </form>
+    <p class="mt-3 text-xs text-slate-500">Public key will be derived from the private key.</p>
   </div>
-  <div class="card">
-    <h3>Generate Key</h3>
-    <form method="post" action="/keys/generate">
-      <div class="form-row">
-        <label for="gen_name">Name</label>
-        <input type="text" name="name" id="gen_name" value="auto-{{nowUnix}}">
+  <div class="rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-sm">
+    <h3 class="text-lg font-semibold">Generate Key</h3>
+    <form method="post" action="/keys/generate" class="mt-4 space-y-4">
+      <div>
+        <label for="gen_name" class="block text-sm font-semibold text-slate-700">Name</label>
+        <input class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" type="text" name="name" id="gen_name" value="auto-{{nowUnix}}">
       </div>
-      <div class="actions">
-        <button type="submit">Generate</button>
-      </div>
+      <button type="submit" class="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700">Generate</button>
     </form>
-    <p class="muted" style="font-size:12px;">Uses ssh-keygen on the server.</p>
+    <p class="mt-3 text-xs text-slate-500">Uses ssh-keygen on the server.</p>
   </div>
 </div>
 
 {{range .Keys}}
-<div id="pubkey-{{.ID}}" class="modal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3>Public Key: {{.Name}}</h3>
-      <div class="actions">
+<div id="pubkey-{{.ID}}" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 p-4" data-modal data-modal-overlay>
+  <div class="w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-lg">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h3 class="text-lg font-semibold">Public Key: {{.Name}}</h3>
+      <div class="flex flex-wrap gap-2">
         {{if .PublicKey}}
-        <button type="button" class="secondary" data-copy-target="#pubkey-{{.ID}}-text" data-copy-label="Copy">Copy</button>
+        <button type="button" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100" data-copy-target="#pubkey-{{.ID}}-text" data-copy-label="Copy">Copy</button>
         {{end}}
-        <a class="btn secondary" href="#">Close</a>
+        <button type="button" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100" data-modal-close>Close</button>
       </div>
     </div>
     {{if .PublicKey}}
-    <pre id="pubkey-{{.ID}}-text">{{.PublicKey}}</pre>
+    <pre id="pubkey-{{.ID}}-text" class="mt-4 max-h-64 overflow-x-auto rounded-lg bg-slate-900 p-4 font-mono text-xs text-emerald-100">{{.PublicKey}}</pre>
     {{else}}
-    <p class="muted">No public key available. Upload a public key or use an unencrypted private key so it can be derived.</p>
+    <p class="mt-4 text-sm text-slate-500">No public key available. Upload a public key or use an unencrypted private key so it can be derived.</p>
     {{end}}
   </div>
 </div>

@@ -1,38 +1,38 @@
 {{define "host_form"}}
-<div class="card" style="max-width:720px;">
-  <h2>{{if .SelectedHost}}Edit Host{{else}}New Host{{end}}</h2>
-  <form method="post" action="{{if .SelectedHost}}/hosts/update{{else}}/hosts/create{{end}}">
+<div class="rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-sm">
+  <h2 class="text-xl font-semibold">{{if .SelectedHost}}Edit Host{{else}}New Host{{end}}</h2>
+  <form method="post" action="{{if .SelectedHost}}/hosts/update{{else}}/hosts/create{{end}}" class="mt-6 space-y-4">
     {{if .SelectedHost}}<input type="hidden" name="id" value="{{.SelectedHost.ID}}">{{end}}
-    <div class="form-row">
-      <label for="name">Name</label>
-      <input type="text" name="name" id="name" value="{{if .SelectedHost}}{{.SelectedHost.Name}}{{end}}" required>
+    <div>
+      <label for="name" class="block text-sm font-semibold text-slate-700">Name</label>
+      <input class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" type="text" name="name" id="name" value="{{if .SelectedHost}}{{.SelectedHost.Name}}{{end}}" required>
     </div>
-    <div class="form-row">
-      <label for="address">Address</label>
-      <input type="text" name="address" id="address" value="{{if .SelectedHost}}{{.SelectedHost.Address}}{{end}}" required>
+    <div>
+      <label for="address" class="block text-sm font-semibold text-slate-700">Address</label>
+      <input class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" type="text" name="address" id="address" value="{{if .SelectedHost}}{{.SelectedHost.Address}}{{end}}" required>
     </div>
-    <div class="grid">
-      <div class="form-row">
-        <label for="user">SSH User</label>
-        <input type="text" name="user" id="user" value="{{if .SelectedHost}}{{.SelectedHost.User}}{{end}}" required>
+    <div class="grid gap-4 md:grid-cols-2">
+      <div>
+        <label for="user" class="block text-sm font-semibold text-slate-700">SSH User</label>
+        <input class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" type="text" name="user" id="user" value="{{if .SelectedHost}}{{.SelectedHost.User}}{{end}}" required>
       </div>
-      <div class="form-row">
-        <label for="port">SSH Port</label>
-        <input type="text" name="port" id="port" value="{{if .SelectedHost}}{{.SelectedHost.Port}}{{else}}22{{end}}">
+      <div>
+        <label for="port" class="block text-sm font-semibold text-slate-700">SSH Port</label>
+        <input class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" type="text" name="port" id="port" value="{{if .SelectedHost}}{{.SelectedHost.Port}}{{else}}22{{end}}">
       </div>
     </div>
-    <div class="form-row">
-      <label for="groups">Groups</label>
-      <select name="group_ids" id="groups" multiple size="5">
+    <div>
+      <label for="groups" class="block text-sm font-semibold text-slate-700">Groups</label>
+      <select class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" name="group_ids" id="groups" multiple size="5">
         {{range .Groups}}
         <option value="{{.ID}}" {{if index $.SelectedGroupIDs .ID}}selected{{end}}>{{.Name}}</option>
         {{end}}
       </select>
-      <div class="muted" style="font-size:12px;">Hold Ctrl/Cmd to select multiple groups.</div>
+      <p class="mt-2 text-xs text-slate-500">Hold Ctrl/Cmd to select multiple groups.</p>
     </div>
-    <div class="actions">
-      <button type="submit">Save</button>
-      <a class="btn secondary" href="/hosts">Cancel</a>
+    <div class="flex flex-wrap gap-3">
+      <button type="submit" class="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700">Save</button>
+      <a class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100" href="/hosts">Cancel</a>
     </div>
   </form>
 </div>

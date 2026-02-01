@@ -1,18 +1,18 @@
 {{define "setup"}}
-<div class="card" style="max-width:420px;margin:40px auto;">
-  <h2>Initial Setup</h2>
-  <p class="muted">Create the first admin account.</p>
-  <form method="post" action="/setup">
-    <div class="form-row">
-      <label for="username">Username</label>
-      <input type="text" name="username" id="username" required>
+<div class="mx-auto mt-16 rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-lg">
+  <h2 class="text-2xl font-semibold">Initial Setup</h2>
+  <p class="mt-2 text-sm text-slate-500">Create the first admin account.</p>
+  <form method="post" action="/setup" class="mt-6 space-y-4">
+    <div>
+      <label for="username" class="block text-sm font-semibold text-slate-700">Username</label>
+      <input class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" type="text" name="username" id="username" required>
     </div>
-    <div class="form-row">
-      <label for="password">Password</label>
-      <input type="password" name="password" id="password" required>
+    <div>
+      <label for="password" class="block text-sm font-semibold text-slate-700">Password</label>
+      <input class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" type="password" name="password" id="password" required>
     </div>
-    <div class="actions">
-      <button type="submit">Create Admin</button>
+    <div class="flex items-center justify-between">
+      <button type="submit" class="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700">Create Admin</button>
     </div>
   </form>
 </div>

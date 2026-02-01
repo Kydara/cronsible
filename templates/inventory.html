@@ -1,18 +1,23 @@
 {{define "inventory"}}
-<div class="card">
-  <h2>Inventory</h2>
-  <p>Inventory path: <code>{{.InventoryPath}}</code></p>
-  <div class="actions">
-    <form method="post" action="/inventory/generate">
-      <button type="submit">Generate Inventory</button>
-    </form>
-    <a class="btn secondary" href="/inventory/download">Download</a>
+<div class="rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-sm">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h2 class="text-xl font-semibold">Inventory</h2>
+      <p class="text-sm text-slate-500">Ansible compatible hosts file.</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <form method="post" action="/inventory/generate">
+        <button type="submit" class="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700">Generate</button>
+      </form>
+      <a class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100" href="/inventory/download">Download</a>
+    </div>
   </div>
-  <p class="muted" style="font-size:12px;">Inventory is also regenerated before each job run.</p>
+  <p class="mt-4 text-sm text-slate-600">Inventory path: <span class="font-mono text-xs text-slate-700">{{.InventoryPath}}</span></p>
+  <p class="mt-1 text-xs text-slate-500">Inventory is regenerated before each job run.</p>
   {{if .InventoryContent}}
-  <pre>{{.InventoryContent}}</pre>
+  <pre class="mt-5 max-h-96 overflow-auto rounded-lg bg-slate-900 p-4 font-mono text-xs text-emerald-100">{{.InventoryContent}}</pre>
   {{else}}
-  <p class="muted">No inventory generated yet.</p>
+  <p class="mt-5 text-sm text-slate-500">No inventory generated yet.</p>
   {{end}}
 </div>
 {{end}}

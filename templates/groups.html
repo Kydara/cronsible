@@ -1,40 +1,45 @@
 {{define "groups"}}
-<div class="card">
-  <div class="actions" style="justify-content:space-between;">
-    <h2>Groups</h2>
-    <a class="btn" href="/groups/new">Add Group</a>
+<div class="rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-sm">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h2 class="text-xl font-semibold">Groups</h2>
+      <p class="text-sm text-slate-500">Organize hosts into reusable targets.</p>
+    </div>
+    <a class="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700" href="/groups/new">Add Group</a>
   </div>
   {{if .Groups}}
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Description</th>
-        <th>Hosts</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {{range .Groups}}
-      <tr>
-        <td>{{.Name}}</td>
-        <td>{{if .Description}}{{.Description}}{{else}}<span class="muted">-</span>{{end}}</td>
-        <td>{{.HostCount}}</td>
-        <td>
-          <div class="actions">
-            <a class="btn secondary" href="/groups/edit?id={{.ID}}">Edit</a>
-            <form method="post" action="/groups/delete">
-              <input type="hidden" name="id" value="{{.ID}}">
-              <button type="submit" class="danger">Delete</button>
-            </form>
-          </div>
-        </td>
-      </tr>
-      {{end}}
-    </tbody>
-  </table>
+  <div class="mt-6 overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="text-xs uppercase tracking-wide text-slate-500">
+        <tr>
+          <th class="px-3 py-2 text-left">Name</th>
+          <th class="px-3 py-2 text-left">Description</th>
+          <th class="px-3 py-2 text-left">Hosts</th>
+          <th class="px-3 py-2 text-left">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-200">
+        {{range .Groups}}
+        <tr>
+          <td class="px-3 py-3 font-semibold">{{.Name}}</td>
+          <td class="px-3 py-3">{{if .Description}}{{.Description}}{{else}}<span class="text-slate-400">-</span>{{end}}</td>
+          <td class="px-3 py-3">{{.HostCount}}</td>
+          <td class="px-3 py-3">
+            <div class="flex flex-wrap gap-2">
+              <a class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100" href="/groups/edit?id={{.ID}}">Edit</a>
+              <form method="post" action="/groups/delete">
+                <input type="hidden" name="id" value="{{.ID}}">
+                <button type="submit" class="inline-flex items-center rounded-lg bg-rose-600 px-3 py-1 text-xs font-semibold text-white shadow-sm hover:bg-rose-700">Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
   {{else}}
-    <p class="muted">No groups yet.</p>
+    <p class="mt-6 text-sm text-slate-500">No groups yet.</p>
   {{end}}
 </div>
 {{end}}

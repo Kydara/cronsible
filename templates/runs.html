@@ -1,33 +1,48 @@
 {{define "runs"}}
-<div class="card">
-  <h2>Recent Runs</h2>
+<div class="rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-sm">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h2 class="text-xl font-semibold">Recent Runs</h2>
+      <p class="text-sm text-slate-500">Latest execution logs (most recent 50).</p>
+    </div>
+  </div>
   {{if .Runs}}
-  <table>
-    <thead>
-      <tr>
-        <th>Job</th>
-        <th>Started</th>
-        <th>Finished</th>
-        <th>Status</th>
-        <th>Exit</th>
-        <th>Output</th>
-      </tr>
-    </thead>
-    <tbody>
-      {{range .Runs}}
-      <tr>
-        <td>{{.JobName}}</td>
-        <td>{{formatTime .StartedAt}}</td>
-        <td>{{formatTime .FinishedAt}}</td>
-        <td>{{if eq .Status "success"}}<span class="pill good">success</span>{{else}}<span class="pill bad">failed</span>{{end}}</td>
-        <td>{{.ExitCode}}</td>
-        <td><pre>{{.Output}}</pre></td>
-      </tr>
-      {{end}}
-    </tbody>
-  </table>
+  <div class="mt-6 overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="text-xs uppercase tracking-wide text-slate-500">
+        <tr>
+          <th class="px-3 py-2 text-left">Job</th>
+          <th class="px-3 py-2 text-left">Started</th>
+          <th class="px-3 py-2 text-left">Finished</th>
+          <th class="px-3 py-2 text-left">Status</th>
+          <th class="px-3 py-2 text-left">Exit</th>
+          <th class="px-3 py-2 text-left">Output</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-200">
+        {{range .Runs}}
+        <tr>
+          <td class="px-3 py-3 font-semibold">{{.JobName}}</td>
+          <td class="px-3 py-3 text-sm text-slate-600">{{formatTime .StartedAt}}</td>
+          <td class="px-3 py-3 text-sm text-slate-600">{{formatTime .FinishedAt}}</td>
+          <td class="px-3 py-3">
+            {{if eq .Status "success"}}
+              <span class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">success</span>
+            {{else}}
+              <span class="inline-flex items-center rounded-full bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700">failed</span>
+            {{end}}
+          </td>
+          <td class="px-3 py-3 text-sm text-slate-600">{{.ExitCode}}</td>
+          <td class="px-3 py-3">
+            <pre class="max-h-48 overflow-auto rounded-lg bg-slate-900 p-3 font-mono text-xs text-emerald-100">{{.Output}}</pre>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
   {{else}}
-  <p class="muted">No runs yet.</p>
+  <p class="mt-6 text-sm text-slate-500">No runs yet.</p>
   {{end}}
 </div>
 {{end}}
