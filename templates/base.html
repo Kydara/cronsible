@@ -36,12 +36,12 @@
         </div>
       </div>
       <nav class="flex flex-wrap items-center gap-2 text-sm font-semibold">
-        <a class="rounded-full px-3 py-1 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700" href="/jobs">Jobs</a>
-        <a class="rounded-full px-3 py-1 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700" href="/hosts">Hosts</a>
-        <a class="rounded-full px-3 py-1 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700" href="/groups">Groups</a>
-        <a class="rounded-full px-3 py-1 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700" href="/keys">Keys</a>
-        <a class="rounded-full px-3 py-1 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700" href="/inventory">Inventory</a>
-        <a class="rounded-full px-3 py-1 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700" href="/runs">Runs</a>
+        <a class="{{if isActive "/jobs" .CurrentPath}}rounded-full bg-emerald-600 px-3 py-1 text-white shadow-sm{{else}}rounded-full px-3 py-1 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700{{end}}" href="/jobs">Jobs</a>
+        <a class="{{if isActive "/hosts" .CurrentPath}}rounded-full bg-emerald-600 px-3 py-1 text-white shadow-sm{{else}}rounded-full px-3 py-1 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700{{end}}" href="/hosts">Hosts</a>
+        <a class="{{if isActive "/groups" .CurrentPath}}rounded-full bg-emerald-600 px-3 py-1 text-white shadow-sm{{else}}rounded-full px-3 py-1 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700{{end}}" href="/groups">Groups</a>
+        <a class="{{if isActive "/keys" .CurrentPath}}rounded-full bg-emerald-600 px-3 py-1 text-white shadow-sm{{else}}rounded-full px-3 py-1 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700{{end}}" href="/keys">Keys</a>
+        <a class="{{if isActive "/inventory" .CurrentPath}}rounded-full bg-emerald-600 px-3 py-1 text-white shadow-sm{{else}}rounded-full px-3 py-1 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700{{end}}" href="/inventory">Inventory</a>
+        <a class="{{if isActive "/runs" .CurrentPath}}rounded-full bg-emerald-600 px-3 py-1 text-white shadow-sm{{else}}rounded-full px-3 py-1 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700{{end}}" href="/runs">Runs</a>
         {{if .User}}
         <form action="/logout" method="post" class="ml-2">
           <button type="submit" class="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-1 text-xs font-semibold uppercase tracking-wide text-slate-700 shadow-sm hover:bg-slate-100">Logout</button>

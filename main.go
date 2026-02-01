@@ -35,12 +35,13 @@ const (
 var nameRe = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
 
 type Config struct {
-	Addr          string
-	DataDir       string
-	DBPath        string
-	InventoryPath string
-	KeysDir       string
-	AnsiblePath   string
+	Addr           string
+	DataDir        string
+	DBPath         string
+	InventoryPath  string
+	KnownHostsPath string
+	KeysDir        string
+	AnsiblePath    string
 }
 
 type App struct {
@@ -67,12 +68,14 @@ type User struct {
 }
 
 type Host struct {
-	ID         int64
-	Name       string
-	Address    string
-	Port       int
-	User       string
-	GroupNames string
+	ID                 int64
+	Name               string
+	Address            string
+	Port               int
+	User               string
+	HostKey            string
+	StrictHostChecking bool
+	GroupNames         string
 }
 
 type Group struct {
@@ -125,6 +128,7 @@ type TemplateData struct {
 	Error            string
 	Info             string
 	ContentTemplate  string
+	CurrentPath      string
 	Hosts            []Host
 	Groups           []Group
 	Jobs             []JobView
@@ -206,12 +210,13 @@ func loadConfig() Config {
 		addr = ":8080"
 	}
 	return Config{
-		Addr:          addr,
-		DataDir:       dataDir,
-		DBPath:        filepath.Join(dataDir, "cronsible.db"),
-		InventoryPath: filepath.Join(dataDir, "inventory.ini"),
-		KeysDir:       filepath.Join(dataDir, "keys"),
-		AnsiblePath:   ansiblePath,
+		Addr:           addr,
+		DataDir:        dataDir,
+		DBPath:         filepath.Join(dataDir, "cronsible.db"),
+		InventoryPath:  filepath.Join(dataDir, "inventory.ini"),
+		KnownHostsPath: filepath.Join(dataDir, "known_hosts"),
+		KeysDir:        filepath.Join(dataDir, "keys"),
+		AnsiblePath:    ansiblePath,
 	}
 }
 
@@ -271,7 +276,9 @@ func migrate(db *sql.DB) error {
 			name TEXT NOT NULL UNIQUE,
 			address TEXT NOT NULL,
 			port INTEGER NOT NULL,
-			user TEXT NOT NULL
+			user TEXT NOT NULL,
+			host_key TEXT,
+			strict_host_checking INTEGER NOT NULL DEFAULT 0
 		)`,
 		`CREATE TABLE IF NOT EXISTS host_groups (
 			host_id INTEGER NOT NULL,
@@ -312,7 +319,35 @@ func migrate(db *sql.DB) error {
 			return err
 		}
 	}
+	if err := ensureColumn(db, "hosts", "host_key", "TEXT"); err != nil {
+		return err
+	}
+	if err := ensureColumn(db, "hosts", "strict_host_checking", "INTEGER NOT NULL DEFAULT 0"); err != nil {
+		return err
+	}
 	return nil
+}
+
+func ensureColumn(db *sql.DB, table, column, def string) error {
+	rows, err := db.Query(fmt.Sprintf("PRAGMA table_info(%s)", table))
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var cid int
+		var name, ctype string
+		var notnull, pk int
+		var dflt sql.NullString
+		if err := rows.Scan(&cid, &name, &ctype, &notnull, &dflt, &pk); err != nil {
+			return err
+		}
+		if name == column {
+			return nil
+		}
+	}
+	_, err = db.Exec(fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s", table, column, def))
+	return err
 }
 
 func parseTemplates() (*template.Template, error) {
@@ -323,6 +358,12 @@ func parseTemplates() (*template.Template, error) {
 				return "-"
 			}
 			return time.Unix(ts, 0).Local().Format("2006-01-02 15:04:05")
+		},
+		"isActive": func(path, current string) bool {
+			if current == "" {
+				return false
+			}
+			return current == path || strings.HasPrefix(current, path+"/")
 		},
 		"nowUnix": func() int64 {
 			return time.Now().Unix()
@@ -447,6 +488,9 @@ func (a *App) render(w http.ResponseWriter, r *http.Request, name string, data *
 	}
 	if data.ContentTemplate == "" {
 		data.ContentTemplate = name
+	}
+	if data.CurrentPath == "" && r != nil {
+		data.CurrentPath = r.URL.Path
 	}
 	if user, ok := r.Context().Value("user").(*User); ok {
 		data.User = user
@@ -599,12 +643,10 @@ func (a *App) handleHostCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	name := strings.TrimSpace(r.FormValue("name"))
-	if name == "" {
-		a.renderKeysError(w, r, "key name is required")
-		return
-	}
 	address := strings.TrimSpace(r.FormValue("address"))
 	user := strings.TrimSpace(r.FormValue("user"))
+	hostKey := strings.TrimSpace(r.FormValue("host_key"))
+	strict := r.FormValue("strict_host_checking") == "on"
 	portStr := strings.TrimSpace(r.FormValue("port"))
 	port := 22
 	if portStr != "" {
@@ -612,16 +654,24 @@ func (a *App) handleHostCreate(w http.ResponseWriter, r *http.Request) {
 			port = p
 		}
 	}
-	if !validName(name) || address == "" || user == "" {
+	if !validName(name) || address == "" || user == "" || (strict && hostKey == "") {
 		groups, _ := a.listGroups()
-		data := &TemplateData{Title: "New Host", Error: "invalid host data", Groups: groups, SelectedGroupIDs: idsToSet(parseIDs(r.Form["group_ids"]))}
+		host := &Host{
+			Name:               name,
+			Address:            address,
+			User:               user,
+			Port:               port,
+			HostKey:            hostKey,
+			StrictHostChecking: strict,
+		}
+		data := &TemplateData{Title: "New Host", Error: "invalid host data", Groups: groups, SelectedGroupIDs: idsToSet(parseIDs(r.Form["group_ids"])), SelectedHost: host}
 		a.render(w, r, "host_form", data)
 		return
 	}
-	res, err := a.db.Exec(`INSERT INTO hosts (name, address, port, user) VALUES (?, ?, ?, ?)`, name, address, port, user)
+	res, err := a.db.Exec(`INSERT INTO hosts (name, address, port, user, host_key, strict_host_checking) VALUES (?, ?, ?, ?, ?, ?)`, name, address, port, user, hostKey, boolToInt(strict))
 	if err != nil {
 		groups, _ := a.listGroups()
-		data := &TemplateData{Title: "New Host", Error: "failed to create host", Groups: groups}
+		data := &TemplateData{Title: "New Host", Error: "failed to create host", Groups: groups, SelectedHost: &Host{Name: name, Address: address, User: user, Port: port, HostKey: hostKey, StrictHostChecking: strict}}
 		a.render(w, r, "host_form", data)
 		return
 	}
@@ -668,6 +718,8 @@ func (a *App) handleHostUpdate(w http.ResponseWriter, r *http.Request) {
 	name := strings.TrimSpace(r.FormValue("name"))
 	address := strings.TrimSpace(r.FormValue("address"))
 	user := strings.TrimSpace(r.FormValue("user"))
+	hostKey := strings.TrimSpace(r.FormValue("host_key"))
+	strict := r.FormValue("strict_host_checking") == "on"
 	portStr := strings.TrimSpace(r.FormValue("port"))
 	port := 22
 	if portStr != "" {
@@ -675,17 +727,33 @@ func (a *App) handleHostUpdate(w http.ResponseWriter, r *http.Request) {
 			port = p
 		}
 	}
-	if !validName(name) || address == "" || user == "" {
-		host, _ := a.getHost(id)
+	if !validName(name) || address == "" || user == "" || (strict && hostKey == "") {
 		groups, _ := a.listGroups()
+		host := &Host{
+			ID:                 id,
+			Name:               name,
+			Address:            address,
+			User:               user,
+			Port:               port,
+			HostKey:            hostKey,
+			StrictHostChecking: strict,
+		}
 		data := &TemplateData{Title: "Edit Host", Error: "invalid host data", SelectedHost: host, Groups: groups, SelectedGroupIDs: idsToSet(parseIDs(r.Form["group_ids"]))}
 		a.render(w, r, "host_form", data)
 		return
 	}
-	_, err = a.db.Exec(`UPDATE hosts SET name = ?, address = ?, port = ?, user = ? WHERE id = ?`, name, address, port, user, id)
+	_, err = a.db.Exec(`UPDATE hosts SET name = ?, address = ?, port = ?, user = ?, host_key = ?, strict_host_checking = ? WHERE id = ?`, name, address, port, user, hostKey, boolToInt(strict), id)
 	if err != nil {
-		host, _ := a.getHost(id)
 		groups, _ := a.listGroups()
+		host := &Host{
+			ID:                 id,
+			Name:               name,
+			Address:            address,
+			User:               user,
+			Port:               port,
+			HostKey:            hostKey,
+			StrictHostChecking: strict,
+		}
 		data := &TemplateData{Title: "Edit Host", Error: "failed to update host", SelectedHost: host, Groups: groups}
 		a.render(w, r, "host_form", data)
 		return
@@ -1205,10 +1273,12 @@ func (a *App) listHosts() ([]Host, error) {
 
 func (a *App) getHost(id int64) (*Host, error) {
 	var h Host
-	row := a.db.QueryRow(`SELECT id, name, address, port, user FROM hosts WHERE id = ?`, id)
-	if err := row.Scan(&h.ID, &h.Name, &h.Address, &h.Port, &h.User); err != nil {
+	var strict int
+	row := a.db.QueryRow(`SELECT id, name, address, port, user, host_key, strict_host_checking FROM hosts WHERE id = ?`, id)
+	if err := row.Scan(&h.ID, &h.Name, &h.Address, &h.Port, &h.User, &h.HostKey, &strict); err != nil {
 		return nil, err
 	}
+	h.StrictHostChecking = strict == 1
 	return &h, nil
 }
 
@@ -1346,7 +1416,7 @@ func (a *App) getHostGroupIDs(hostID int64) ([]int64, error) {
 }
 
 func (a *App) GenerateInventory() error {
-	rows, err := a.db.Query(`SELECT h.id, h.name, h.address, h.port, h.user, g.name
+	rows, err := a.db.Query(`SELECT h.id, h.name, h.address, h.port, h.user, h.host_key, h.strict_host_checking, g.name
 		FROM hosts h
 		LEFT JOIN host_groups hg ON h.id = hg.host_id
 		LEFT JOIN groups g ON hg.group_id = g.id
@@ -1357,32 +1427,37 @@ func (a *App) GenerateInventory() error {
 	defer rows.Close()
 
 	type invHost struct {
-		ID      int64
-		Name    string
-		Address string
-		Port    int
-		User    string
-		Groups  map[string]bool
+		ID                 int64
+		Name               string
+		Address            string
+		Port               int
+		User               string
+		HostKey            string
+		StrictHostChecking bool
+		Groups             map[string]bool
 	}
 
 	hostsByID := make(map[int64]*invHost)
 	groupsSet := make(map[string]bool)
 	for rows.Next() {
 		var hostID int64
-		var name, address, user, groupName sql.NullString
+		var name, address, user, hostKey, groupName sql.NullString
 		var port int
-		if err := rows.Scan(&hostID, &name, &address, &port, &user, &groupName); err != nil {
+		var strict int
+		if err := rows.Scan(&hostID, &name, &address, &port, &user, &hostKey, &strict, &groupName); err != nil {
 			return err
 		}
 		h, ok := hostsByID[hostID]
 		if !ok {
 			h = &invHost{
-				ID:      hostID,
-				Name:    name.String,
-				Address: address.String,
-				Port:    port,
-				User:    user.String,
-				Groups:  make(map[string]bool),
+				ID:                 hostID,
+				Name:               name.String,
+				Address:            address.String,
+				Port:               port,
+				User:               user.String,
+				HostKey:            hostKey.String,
+				StrictHostChecking: strict == 1,
+				Groups:             make(map[string]bool),
 			}
 			hostsByID[hostID] = h
 		}
@@ -1404,6 +1479,32 @@ func (a *App) GenerateInventory() error {
 	}
 	sort.Strings(groupNames)
 
+	var knownHosts []string
+	for _, h := range hosts {
+		if h.StrictHostChecking && strings.TrimSpace(h.HostKey) != "" {
+			knownHosts = append(knownHosts, strings.TrimSpace(h.HostKey))
+		}
+	}
+	if len(knownHosts) > 0 {
+		knownContent := strings.Join(knownHosts, "\n") + "\n"
+		tmpKnown, err := os.CreateTemp(filepath.Dir(a.cfg.KnownHostsPath), "known_hosts-*.tmp")
+		if err != nil {
+			return err
+		}
+		if _, err := tmpKnown.WriteString(knownContent); err != nil {
+			_ = tmpKnown.Close()
+			return err
+		}
+		if err := tmpKnown.Close(); err != nil {
+			return err
+		}
+		if err := os.Rename(tmpKnown.Name(), a.cfg.KnownHostsPath); err != nil {
+			return err
+		}
+	} else {
+		_ = os.Remove(a.cfg.KnownHostsPath)
+	}
+
 	var b strings.Builder
 	b.WriteString("[all]\n")
 	for _, h := range hosts {
@@ -1416,6 +1517,9 @@ func (a *App) GenerateInventory() error {
 		}
 		if h.Port != 0 {
 			fmt.Fprintf(&b, " ansible_port=%d", h.Port)
+		}
+		if h.StrictHostChecking && strings.TrimSpace(h.HostKey) != "" {
+			fmt.Fprintf(&b, " ansible_ssh_common_args='-o StrictHostKeyChecking=yes -o UserKnownHostsFile=%s'", a.cfg.KnownHostsPath)
 		}
 		b.WriteString("\n")
 	}
