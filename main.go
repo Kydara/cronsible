@@ -351,6 +351,8 @@ func parseTemplates() (*template.Template, error) {
 func (a *App) routes() http.Handler {
 	mux := http.NewServeMux()
 
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+
 	mux.HandleFunc("/", a.requireAuth(a.handleHome))
 	mux.HandleFunc("/setup", a.handleSetup)
 	mux.HandleFunc("/login", a.handleLogin)
