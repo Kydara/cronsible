@@ -962,6 +962,11 @@ func (a *App) handleJobCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	enabled := r.FormValue("enabled") == "on"
 	targetType, targetID, err := parseTarget(r.FormValue("target"))
+	if format == "playbook" {
+		targetType = "all"
+		targetID = 0
+		err = nil
+	}
 	if err != nil {
 		a.render(w, r, "job_form", &TemplateData{Title: "New Job", Error: "invalid target"})
 		return
@@ -1089,6 +1094,11 @@ func (a *App) handleJobUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 	enabled := r.FormValue("enabled") == "on"
 	targetType, targetID, err := parseTarget(r.FormValue("target"))
+	if format == "playbook" {
+		targetType = "all"
+		targetID = 0
+		err = nil
+	}
 	if err != nil {
 		http.Redirect(w, r, "/jobs", http.StatusSeeOther)
 		return
@@ -1377,7 +1387,12 @@ func (a *App) getGroup(id int64) (*Group, error) {
 
 func (a *App) listJobs() ([]JobView, error) {
 	rows, err := a.db.Query(`SELECT j.id, j.name, j.target_type, j.target_id, j.schedule, j.command, j.job_format, j.enabled,
-		CASE WHEN j.target_type = 'host' THEN h.name ELSE g.name END AS target_name
+		CASE
+			WHEN j.target_type = 'host' THEN h.name
+			WHEN j.target_type = 'group' THEN g.name
+			WHEN j.target_type = 'all' THEN '[ALL HOSTS]'
+			ELSE ''
+		END AS target_name
 		FROM jobs j
 		LEFT JOIN hosts h ON j.target_type = 'host' AND j.target_id = h.id
 		LEFT JOIN groups g ON j.target_type = 'group' AND j.target_id = g.id
@@ -1849,6 +1864,9 @@ func (r *Runner) resolveTargetName(targetType string, targetID int64) (string, e
 		}
 		return name, nil
 	}
+	if targetType == "all" {
+		return "all", nil
+	}
 	return "", errors.New("unknown target type")
 }
 
@@ -1907,15 +1925,21 @@ func idsToSet(ids []int64) map[int64]bool {
 }
 
 func parseTarget(value string) (string, int64, error) {
+	if value == "all" {
+		return "all", 0, nil
+	}
 	parts := strings.Split(value, ":")
 	if len(parts) != 2 {
 		return "", 0, errors.New("invalid target")
+	}
+	typeVal := parts[0]
+	if typeVal == "all" {
+		return "all", 0, nil
 	}
 	id, err := strconv.ParseInt(parts[1], 10, 64)
 	if err != nil {
 		return "", 0, err
 	}
-	typeVal := parts[0]
 	if typeVal != "host" && typeVal != "group" {
 		return "", 0, errors.New("invalid target type")
 	}

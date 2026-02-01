@@ -11,6 +11,7 @@
       <label for="target" class="block text-sm font-semibold text-slate-700 dark:text-slate-200">Target (host or group)</label>
       <select class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-emerald-400 dark:focus:ring-emerald-500/30 dark:disabled:bg-slate-800 dark:disabled:text-slate-400" name="target" id="target" required>
         <option value="">Select target</option>
+        <option value="all:0" {{if eq $.SelectedTarget "all:0"}}selected{{end}}>[ALL HOSTS]</option>
         <optgroup label="Hosts">
           {{range .Hosts}}
           <option value="host:{{.ID}}" {{if eq $.SelectedTarget (printf "host:%d" .ID)}}selected{{end}}>{{.Name}}</option>
@@ -26,7 +27,7 @@
     <div>
       <label for="schedule" class="block text-sm font-semibold text-slate-700 dark:text-slate-200">Cron Schedule</label>
       <input class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-emerald-400 dark:focus:ring-emerald-500/30" type="text" name="schedule" id="schedule" value="{{if .SelectedJob}}{{.SelectedJob.Schedule}}{{end}}" placeholder="*/5 * * * *" required>
-      <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Five-field cron format: minute hour day month weekday.</p>
+      <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Five-field cron format: minute hour day month weekday</p>
     </div>
     <div>
       <label for="schedule_hint" class="block text-sm font-semibold text-slate-700 dark:text-slate-200">Schedule Hint (AI helper)</label>
@@ -34,7 +35,7 @@
         <input class="w-full flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-emerald-400 dark:focus:ring-emerald-500/30" type="text" name="schedule_hint" id="schedule_hint" placeholder="every 5 minutes, weekdays at 02:30" value="{{.ScheduleHint}}">
         <button type="submit" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800" formaction="/jobs/suggest" formnovalidate>Parse</button>
       </div>
-      <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Simple parser for common phrases.</p>
+      <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Simple parser for common phrases</p>
     </div>
     <div>
       <label for="job_format" class="block text-sm font-semibold text-slate-700 dark:text-slate-200">Job Format</label>
@@ -42,12 +43,12 @@
         <option value="shell" {{if eq .JobFormat "shell"}}selected{{end}}>Shell command</option>
         <option value="playbook" {{if eq .JobFormat "playbook"}}selected{{end}}>Playbook YAML</option>
       </select>
-      <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Shell commands are wrapped into ansible.builtin.shell. Playbook YAML should be a full playbook.</p>
+      <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Shell commands are wrapped into ansible.builtin.shell. Playbook YAML should be a full playbook</p>
     </div>
     <div>
       <label for="command" class="block text-sm font-semibold text-slate-700 dark:text-slate-200">Job Body <span id="job_body_hint" class="text-xs font-medium text-slate-500 dark:text-slate-400">{{if eq .JobFormat "playbook"}}(Ansible YAML){{else}}(Shell command){{end}}</span></label>
       <textarea rows="20" class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-emerald-400 dark:focus:ring-emerald-500/30" name="command" id="command" required>{{if .SelectedJob}}{{.SelectedJob.Command}}{{end}}</textarea>
-      <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">For shell format, enter a command. For playbook YAML, paste the playbook content.</p>
+      <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">For shell format, enter a command. For playbook YAML, paste the playbook content</p>
     </div>
     <div class="flex items-center gap-2 text-sm">
       <input type="checkbox" name="enabled" class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-900 dark:focus:ring-emerald-500/30" {{if .SelectedJob}}{{if .SelectedJob.Enabled}}checked{{end}}{{else}}checked{{end}}>
@@ -70,7 +71,7 @@
     function disableTarget() {
       if (!target) return;
       target.dataset.prevValue = target.value;
-      target.innerHTML = '<option value="">Unavailable - using playbook host definition.</option>';
+      target.innerHTML = '<option value="">Unavailable - using playbook host definition</option>';
       target.value = '';
       target.disabled = true;
     }

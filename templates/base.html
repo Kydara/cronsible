@@ -53,56 +53,22 @@
   <script>
     (function () {
       var root = document.documentElement;
-      var stored = localStorage.getItem('theme');
       var prefers = window.matchMedia('(prefers-color-scheme: dark)');
-      function applyTheme(value) {
-        if (value === 'dark') {
+      function applyTheme(isDark) {
+        if (isDark) {
           root.classList.add('dark');
         } else {
           root.classList.remove('dark');
         }
-        updateToggle(value);
       }
-      function currentTheme() {
-        return root.classList.contains('dark') ? 'dark' : 'light';
-      }
-      function updateToggle(value) {
-        var toggle = document.getElementById('theme_toggle');
-        var icon = document.getElementById('theme_icon');
-        if (!toggle || !icon) return;
-        var theme = value || currentTheme();
-        if (theme === 'dark') {
-          icon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"></path>';
-        } else {
-          icon.innerHTML = '<path d="M12 3a1 1 0 0 1 1 1v1"></path>' +
-            '<path d="M12 19a1 1 0 0 1 1 1v1"></path>' +
-            '<path d="M4.22 5.64a1 1 0 0 1 1.42 0l.7.7"></path>' +
-            '<path d="M18.36 19.78a1 1 0 0 1 1.42 0l.7.7"></path>' +
-            '<path d="M3 12a1 1 0 0 1 1-1h1"></path>' +
-            '<path d="M19 12a1 1 0 0 1 1-1h1"></path>' +
-            '<path d="M4.22 18.36a1 1 0 0 0 1.42 0l.7-.7"></path>' +
-            '<path d="M18.36 4.22a1 1 0 0 0 1.42 0l.7-.7"></path>' +
-            '<circle cx="12" cy="12" r="4"></circle>';
-        }
-      }
-      applyTheme(stored ? stored : (prefers.matches ? 'dark' : 'light'));
+      applyTheme(prefers.matches);
       if (prefers.addEventListener) {
         prefers.addEventListener('change', function (event) {
-          if (localStorage.getItem('theme')) return;
-          applyTheme(event.matches ? 'dark' : 'light');
+          applyTheme(event.matches);
         });
       } else if (prefers.addListener) {
         prefers.addListener(function (event) {
-          if (localStorage.getItem('theme')) return;
-          applyTheme(event.matches ? 'dark' : 'light');
-        });
-      }
-      var toggle = document.getElementById('theme_toggle');
-      if (toggle) {
-        toggle.addEventListener('click', function () {
-          var next = currentTheme() === 'dark' ? 'light' : 'dark';
-          localStorage.setItem('theme', next);
-          applyTheme(next);
+          applyTheme(event.matches);
         });
       }
     })();
@@ -172,6 +138,16 @@
         overlay.classList.add('hidden');
         overlay.classList.remove('flex');
       }
+    });
+
+    document.addEventListener('change', function (event) {
+      var input = event.target;
+      if (!input || !input.matches('[data-file-label]')) return;
+      var selector = input.getAttribute('data-file-label');
+      if (!selector) return;
+      var label = document.querySelector(selector);
+      if (!label) return;
+      label.textContent = input.files && input.files.length ? input.files[0].name : 'No file selected';
     });
   </script>
 </body>

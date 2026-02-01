@@ -10,11 +10,15 @@
       </div>
       <div>
         <label for="private_key" class="block text-sm font-semibold text-slate-700 dark:text-slate-200">Private Key</label>
-        <input class="mt-2 w-full text-sm" type="file" name="private_key" id="private_key" required>
+        <div class="mt-2 flex flex-wrap items-center gap-3">
+          <input class="sr-only" type="file" name="private_key" id="private_key" data-file-label="#private_key_name" required>
+          <label for="private_key" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">Browse</label>
+          <span id="private_key_name" class="text-sm text-slate-500 dark:text-slate-400">No file selected</span>
+        </div>
       </div>
       <button type="submit" class="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 dark:bg-emerald-500 dark:text-slate-900 dark:hover:bg-emerald-400">Upload</button>
     </form>
-    <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">Public key will be derived from the private key.</p>
+    <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">Public key will be derived from the private key</p>
   </div>
   <div class="rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
     <h3 class="text-lg font-semibold">Generate Key</h3>
@@ -25,13 +29,13 @@
       </div>
       <button type="submit" class="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 dark:bg-emerald-500 dark:text-slate-900 dark:hover:bg-emerald-400">Generate</button>
     </form>
-    <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">Uses ssh-keygen on the server.</p>
+    <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">Uses ssh-keygen on the server</p>
   </div>
   <div class="rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-sm md:col-span-2 dark:border-slate-800 dark:bg-slate-900/80">
     <div class="flex items-center justify-between gap-4">
       <div>
         <h2 class="text-xl font-semibold">SSH Keys</h2>
-        <p class="text-sm text-slate-500 dark:text-slate-400">Manage key pairs for Ansible.</p>
+        <p class="text-sm text-slate-500 dark:text-slate-400">Manage key pairs for Ansible</p>
       </div>
     </div>
     {{if .Keys}}
@@ -95,7 +99,7 @@
       </table>
     </div>
     {{else}}
-    <p class="mt-6 text-sm text-slate-500 dark:text-slate-400">No keys yet.</p>
+    <p class="mt-6 text-sm text-slate-500 dark:text-slate-400">No keys yet</p>
     {{end}}
   </div>
 </div>
@@ -115,7 +119,7 @@
     {{if .PublicKey}}
     <pre id="pubkey-{{.ID}}-text" class="mt-4 max-h-64 overflow-x-auto rounded-lg bg-slate-900 p-4 font-mono text-xs text-emerald-100 dark:bg-slate-950">{{.PublicKey}}</pre>
     {{else}}
-    <p class="mt-4 text-sm text-slate-500 dark:text-slate-400">No public key available. Upload a public key or use an unencrypted private key so it can be derived.</p>
+    <p class="mt-4 text-sm text-slate-500 dark:text-slate-400">No public key available. Upload a public key or use an unencrypted private key so it can be derived</p>
     {{end}}
   </div>
 </div>
