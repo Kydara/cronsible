@@ -23,6 +23,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bcampbell/fuzzytime"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/robfig/cron/v3"
 	"golang.org/x/crypto/bcrypt"
@@ -2037,7 +2038,8 @@ func writeJSON(w http.ResponseWriter, status int, payload any) {
 }
 
 func suggestCron(input string) (string, string) {
-	s := strings.ToLower(strings.TrimSpace(input))
+	raw := strings.TrimSpace(input)
+	s := strings.ToLower(raw)
 	if s == "" {
 		return "", ""
 	}
@@ -2094,6 +2096,10 @@ func suggestCron(input string) (string, string) {
 		return "0 0 1 * *", "monthly on the 1st"
 	}
 
+	if cron, reason := suggestCronFromFuzzy(raw); cron != "" {
+		return cron, reason
+	}
+
 	return "", ""
 }
 
@@ -2113,4 +2119,54 @@ func dayOfWeekFromText(s string) (int, bool) {
 		}
 	}
 	return 0, false
+}
+
+func suggestCronFromFuzzy(input string) (string, string) {
+	dt, _, err := fuzzytime.USContext.Extract(input)
+	if err != nil || dt.Empty() {
+		return "", ""
+	}
+
+	hasHour := dt.Time.HasHour()
+	hasMinute := dt.Time.HasMinute()
+	hasTime := hasHour || hasMinute
+	hour := 0
+	minute := 0
+	if hasHour {
+		hour = dt.Time.Hour()
+	}
+	if hasMinute {
+		minute = dt.Time.Minute()
+	}
+
+	hasDay := dt.Date.HasDay()
+	hasMonth := dt.Date.HasMonth()
+	hasYear := dt.Date.HasYear()
+
+	if hasTime {
+		if hasMonth && hasDay {
+			reason := "date/time hint"
+			if hasYear {
+				reason = "date/time hint (year ignored)"
+			}
+			return fmt.Sprintf("%d %d %d %d *", minute, hour, dt.Date.Day(), dt.Date.Month()), reason
+		}
+		if hasDay {
+			return fmt.Sprintf("%d %d %d * *", minute, hour, dt.Date.Day()), "monthly at time from hint"
+		}
+		return fmt.Sprintf("%d %d * * *", minute, hour), "daily at time from hint"
+	}
+
+	if hasMonth && hasDay {
+		reason := "date hint at midnight"
+		if hasYear {
+			reason = "date hint at midnight (year ignored)"
+		}
+		return fmt.Sprintf("0 0 %d %d *", dt.Date.Day(), dt.Date.Month()), reason
+	}
+	if hasDay {
+		return fmt.Sprintf("0 0 %d * *", dt.Date.Day()), "monthly at midnight from hint"
+	}
+
+	return "", ""
 }

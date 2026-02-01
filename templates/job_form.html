@@ -22,7 +22,6 @@
           {{end}}
         </optgroup>
       </select>
-      <p id="target_hint" class="mt-2 text-xs text-slate-500 dark:text-slate-400"></p>
     </div>
     <div>
       <label for="schedule" class="block text-sm font-semibold text-slate-700 dark:text-slate-200">Cron Schedule</label>
@@ -47,7 +46,7 @@
     </div>
     <div>
       <label for="command" class="block text-sm font-semibold text-slate-700 dark:text-slate-200">Job Body <span id="job_body_hint" class="text-xs font-medium text-slate-500 dark:text-slate-400">{{if eq .JobFormat "playbook"}}(Ansible YAML){{else}}(Shell command){{end}}</span></label>
-      <textarea class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-emerald-400 dark:focus:ring-emerald-500/30" name="command" id="command" required>{{if .SelectedJob}}{{.SelectedJob.Command}}{{end}}</textarea>
+      <textarea rows="20" class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-emerald-400 dark:focus:ring-emerald-500/30" name="command" id="command" required>{{if .SelectedJob}}{{.SelectedJob.Command}}{{end}}</textarea>
       <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">For shell format, enter a command. For playbook YAML, paste the playbook content.</p>
     </div>
     <div class="flex items-center gap-2 text-sm">
@@ -65,16 +64,32 @@
     var format = document.getElementById('job_format');
     var hint = document.getElementById('job_body_hint');
     var target = document.getElementById('target');
-    var targetHint = document.getElementById('target_hint');
     if (!format || !hint) return;
+    var originalOptions = target ? target.innerHTML : '';
+    var originalValue = target ? target.value : '';
+    function disableTarget() {
+      if (!target) return;
+      target.dataset.prevValue = target.value;
+      target.innerHTML = '<option value="">Unavailable - using playbook host definition.</option>';
+      target.value = '';
+      target.disabled = true;
+    }
+    function enableTarget() {
+      if (!target) return;
+      target.disabled = false;
+      target.innerHTML = originalOptions;
+      var desired = target.dataset.prevValue || originalValue;
+      if (desired) {
+        target.value = desired;
+      }
+    }
     function update() {
       var isPlaybook = format.value === 'playbook';
       hint.textContent = isPlaybook ? '(Ansible YAML)' : '(Shell command)';
-      if (target && targetHint) {
-        target.disabled = isPlaybook;
-        targetHint.textContent = isPlaybook
-          ? 'Unavailable - using playbook host definition.'
-          : '';
+      if (isPlaybook) {
+        disableTarget();
+      } else {
+        enableTarget();
       }
     }
     format.addEventListener('change', update);

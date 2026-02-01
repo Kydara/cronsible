@@ -1,3 +1,5 @@
+github.com/bcampbell/fuzzytime v0.0.0-20191010161914-05ea0010feac h1:WrwcFLe/Gpx7JBID3IDZPWqoIcabVx/TmBRmyvXmqCc=
+github.com/bcampbell/fuzzytime v0.0.0-20191010161914-05ea0010feac/go.mod h1:qTQjDNMns0LtE/Txk4cufBxC2Vt5Q97SyOIWV5PQtjo=
 github.com/mattn/go-sqlite3 v1.14.22 h1:2gZY6PC6kBnID23Tichd1K+Z0oS6nE/XwU+Vz/5o4kU=
 github.com/mattn/go-sqlite3 v1.14.22/go.mod h1:Uh1q+B4BYcTPb+yiD3kU8Ct7aC0hY9fxUwlHK0RXw+Y=
 github.com/robfig/cron/v3 v3.0.1 h1:WdRxkvbJztn8LMz/QEvLN5sBU+xKpSqwwUO1Pjr4qDs=
