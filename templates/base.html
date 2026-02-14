@@ -1,0 +1,155 @@
+{{define "base"}}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{.Title}} - Cronsible</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="min-h-screen bg-gradient-to-br from-[#f6f1e9] via-[#f1f6f2] to-[#e6eef2] text-slate-900 dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 dark:text-slate-100">
+  {{if not .HideNav}}
+  <header class="border-b border-slate-200/80 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-900/70">
+    <div class="mx-auto flex flex-col gap-3 px-5 py-4 md:flex-row md:items-center md:justify-between">
+      <div class="flex items-center gap-3">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-700 text-white shadow dark:bg-emerald-500">C</div>
+        <div>
+          <div class="text-sm uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-300">Cronsible</div>
+          <div class="text-xs text-slate-500 dark:text-slate-400">Agentless distributed cron</div>
+        </div>
+      </div>
+      <nav class="flex flex-wrap items-center gap-2 text-sm font-semibold">
+        <a class="{{if isActive "/jobs" .CurrentPath}}rounded-full bg-emerald-600 px-3 py-1 text-white shadow-sm dark:bg-emerald-500 dark:text-slate-900{{else}}rounded-full px-3 py-1 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:text-slate-300 dark:hover:bg-emerald-900/40 dark:hover:text-emerald-200{{end}}" href="/jobs">Jobs</a>
+        <a class="{{if isActive "/hosts" .CurrentPath}}rounded-full bg-emerald-600 px-3 py-1 text-white shadow-sm dark:bg-emerald-500 dark:text-slate-900{{else}}rounded-full px-3 py-1 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:text-slate-300 dark:hover:bg-emerald-900/40 dark:hover:text-emerald-200{{end}}" href="/hosts">Hosts</a>
+        <a class="{{if isActive "/groups" .CurrentPath}}rounded-full bg-emerald-600 px-3 py-1 text-white shadow-sm dark:bg-emerald-500 dark:text-slate-900{{else}}rounded-full px-3 py-1 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:text-slate-300 dark:hover:bg-emerald-900/40 dark:hover:text-emerald-200{{end}}" href="/groups">Groups</a>
+        <a class="{{if isActive "/keys" .CurrentPath}}rounded-full bg-emerald-600 px-3 py-1 text-white shadow-sm dark:bg-emerald-500 dark:text-slate-900{{else}}rounded-full px-3 py-1 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:text-slate-300 dark:hover:bg-emerald-900/40 dark:hover:text-emerald-200{{end}}" href="/keys">Keys</a>
+        <a class="{{if isActive "/inventory" .CurrentPath}}rounded-full bg-emerald-600 px-3 py-1 text-white shadow-sm dark:bg-emerald-500 dark:text-slate-900{{else}}rounded-full px-3 py-1 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:text-slate-300 dark:hover:bg-emerald-900/40 dark:hover:text-emerald-200{{end}}" href="/inventory">Inventory</a>
+        <a class="{{if isActive "/runs" .CurrentPath}}rounded-full bg-emerald-600 px-3 py-1 text-white shadow-sm dark:bg-emerald-500 dark:text-slate-900{{else}}rounded-full px-3 py-1 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:text-slate-300 dark:hover:bg-emerald-900/40 dark:hover:text-emerald-200{{end}}" href="/runs">Runs</a>
+        {{if .User}}
+        <form action="/logout" method="post" class="ml-2">
+          <button type="submit" class="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-rose-600 shadow-sm hover:border-rose-600 hover:bg-rose-600 hover:text-white dark:border-rose-900/40 dark:bg-rose-900/20 dark:text-rose-300 dark:hover:border-rose-500 dark:hover:bg-rose-500 dark:hover:text-white">Logout</button>
+        </form>
+        {{end}}
+      </nav>
+    </div>
+  </header>
+  {{end}}
+  <main class="mx-auto max-w-6xl px-5 py-8">
+    {{if .Error}}
+      <div class="mb-6 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-800 dark:border-rose-900/40 dark:bg-rose-900/20 dark:text-rose-200">
+        {{.Error}}
+      </div>
+    {{end}}
+    {{if .Info}}
+      <div class="mb-6 rounded-2xl border-l-4 border-emerald-500 bg-white/80 px-5 py-3 text-sm text-emerald-800 shadow-sm dark:border-emerald-400 dark:bg-slate-900/60 dark:text-emerald-200">
+        {{.Info}}
+      </div>
+    {{end}}
+    {{render .ContentTemplate .}}
+  </main>
+  <script>
+    (function () {
+      var root = document.documentElement;
+      var prefers = window.matchMedia('(prefers-color-scheme: dark)');
+      function applyTheme(isDark) {
+        if (isDark) {
+          root.classList.add('dark');
+        } else {
+          root.classList.remove('dark');
+        }
+      }
+      applyTheme(prefers.matches);
+      if (prefers.addEventListener) {
+        prefers.addEventListener('change', function (event) {
+          applyTheme(event.matches);
+        });
+      } else if (prefers.addListener) {
+        prefers.addListener(function (event) {
+          applyTheme(event.matches);
+        });
+      }
+    })();
+
+    document.addEventListener('click', function (event) {
+      var copyButton = event.target.closest('[data-copy-target]');
+      if (copyButton) {
+        var selector = copyButton.getAttribute('data-copy-target');
+        var target = document.querySelector(selector);
+        if (!target) return;
+        var text = target.textContent.trim();
+        var original = copyButton.getAttribute('data-copy-label') || copyButton.textContent;
+
+        function setCopied() {
+          copyButton.textContent = 'Copied';
+          setTimeout(function () {
+            copyButton.textContent = original;
+          }, 1200);
+        }
+
+        function fallbackCopy() {
+          var textarea = document.createElement('textarea');
+          textarea.value = text;
+          textarea.style.position = 'fixed';
+          textarea.style.top = '-1000px';
+          document.body.appendChild(textarea);
+          textarea.select();
+          try {
+            document.execCommand('copy');
+            setCopied();
+          } catch (err) {
+          }
+          document.body.removeChild(textarea);
+        }
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(setCopied).catch(fallbackCopy);
+        } else {
+          fallbackCopy();
+        }
+        return;
+      }
+
+      var openButton = event.target.closest('[data-modal-open]');
+      if (openButton) {
+        var modalId = openButton.getAttribute('data-modal-open');
+        var modal = document.getElementById(modalId);
+        if (modal) {
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+        }
+        return;
+      }
+
+      var closeButton = event.target.closest('[data-modal-close]');
+      if (closeButton) {
+        var modal = closeButton.closest('[data-modal]');
+        if (modal) {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+        }
+        return;
+      }
+
+      var overlay = event.target.closest('[data-modal-overlay]');
+      if (overlay && event.target === overlay) {
+        overlay.classList.add('hidden');
+        overlay.classList.remove('flex');
+      }
+    });
+
+    document.addEventListener('change', function (event) {
+      var input = event.target;
+      if (!input || !input.matches('[data-file-label]')) return;
+      var selector = input.getAttribute('data-file-label');
+      if (!selector) return;
+      var label = document.querySelector(selector);
+      if (!label) return;
+      label.textContent = input.files && input.files.length ? input.files[0].name : 'No file selected';
+    });
+  </script>
+</body>
+</html>
+{{end}}

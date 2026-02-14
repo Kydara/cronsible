@@ -1,0 +1,65 @@
+{{define "jobs"}}
+<div class="rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h2 class="text-xl font-semibold">Jobs</h2>
+      <p class="text-sm text-slate-500 dark:text-slate-400">Schedule remote commands with cron syntax</p>
+    </div>
+    <a class="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 dark:bg-emerald-500 dark:text-slate-900 dark:hover:bg-emerald-400" href="/jobs/new">Add Job</a>
+  </div>
+  {{if .Jobs}}
+  <div class="mt-6 overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+        <tr>
+          <th class="px-3 py-2 text-left">Name</th>
+          <th class="px-3 py-2 text-left">Target</th>
+          <th class="px-3 py-2 text-left">Schedule</th>
+          <th class="px-3 py-2 text-left">Command</th>
+          <th class="px-3 py-2 text-left">Enabled</th>
+          <th class="px-3 py-2 text-left">Next Run</th>
+          <th class="px-3 py-2 text-left">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+        {{range .Jobs}}
+        <tr>
+          <td class="px-3 py-3 font-semibold">{{.Name}}</td>
+          <td class="px-3 py-3">{{.TargetType}}: {{.TargetName}}</td>
+          <td class="px-3 py-3">
+            <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-200">{{.Schedule}}</span>
+          </td>
+          <td class="px-3 py-3">
+            <code class="rounded bg-slate-100 px-2 py-1 font-mono text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-200">{{.Command}}</code>
+          </td>
+          <td class="px-3 py-3">
+            {{if .Enabled}}
+              <span class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-200">enabled</span>
+            {{else}}
+              <span class="inline-flex items-center rounded-full bg-slate-200 px-2 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-200">disabled</span>
+            {{end}}
+          </td>
+          <td class="px-3 py-3 text-sm text-slate-600 dark:text-slate-300">{{.NextRun}}</td>
+          <td class="px-3 py-3">
+            <div class="flex flex-wrap gap-2">
+              <form method="post" action="/jobs/run">
+                <input type="hidden" name="id" value="{{.ID}}">
+                <button type="submit" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">Run</button>
+              </form>
+              <a class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800" href="/jobs/edit?id={{.ID}}">Edit</a>
+              <form method="post" action="/jobs/delete">
+                <input type="hidden" name="id" value="{{.ID}}">
+                <button type="submit" class="inline-flex items-center rounded-lg bg-rose-600 px-3 py-1 text-xs font-semibold text-white shadow-sm hover:bg-rose-700 dark:bg-rose-500 dark:text-slate-900 dark:hover:bg-rose-400">Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+    <p class="mt-6 text-sm text-slate-500 dark:text-slate-400">No jobs yet</p>
+  {{end}}
+</div>
+{{end}}
